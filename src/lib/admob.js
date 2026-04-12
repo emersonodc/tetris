@@ -3,28 +3,46 @@ import { AdMob, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 
 const AppOpenAd = registerPlugin('AppOpenAd');
 const TEST_DEVICE_IDENTIFIERS = ['87298d42a1c642a6ce0892f9f11272d4'];
-const SCORE_INTERSTITIAL_AD_ID = 'ca-app-pub-6541705647323354/7379475378';
+const IOS_SCORE_INTERSTITIAL_AD_ID = 'ca-app-pub-6541705647323354/7379475378';
+const ANDROID_SCORE_INTERSTITIAL_AD_ID = 'ca-app-pub-6541705647323354/9226300707';
 
 function isNativeApp() {
   return Capacitor.isNativePlatform();
 }
 
+function isIOSNativeApp() {
+  return isNativeApp() && Capacitor.getPlatform() === 'ios';
+}
+
+function isAndroidNativeApp() {
+  return isNativeApp() && Capacitor.getPlatform() === 'android';
+}
+
 export async function initializeAdMob() {
   if (!isNativeApp()) return;
 
-  console.log('[AppOpenAd] initialize');
-  await Promise.all([
-    AppOpenAd.initialize(),
-    AdMob.initialize({
-      initializeForTesting: true,
-      testingDevices: TEST_DEVICE_IDENTIFIERS,
-    }),
-  ]);
-  console.log('[AppOpenAd] initialize:done');
+  if (isIOSNativeApp()) {
+    console.log('[AppOpenAd] initialize');
+    await Promise.all([
+      AppOpenAd.initialize(),
+      AdMob.initialize({
+        initializeForTesting: true,
+        testingDevices: TEST_DEVICE_IDENTIFIERS,
+      }),
+    ]);
+    console.log('[AppOpenAd] initialize:done');
+    return;
+  }
+
+  if (isAndroidNativeApp()) {
+    console.log('[AndroidAdMob] initialize');
+    await AdMob.initialize();
+    console.log('[AndroidAdMob] initialize:done');
+  }
 }
 
 export async function showStartGameAd() {
-  if (!isNativeApp()) return;
+  if (!isIOSNativeApp()) return;
 
   console.log('[AppOpenAd] showStartGameAd:start');
   await new Promise(async (resolve) => {
@@ -79,6 +97,10 @@ export async function showStartGameAd() {
 export async function showLevelInterstitialAd() {
   if (!isNativeApp()) return;
 
+  const interstitialAdId = isAndroidNativeApp()
+    ? ANDROID_SCORE_INTERSTITIAL_AD_ID
+    : IOS_SCORE_INTERSTITIAL_AD_ID;
+
   console.log('[LevelInterstitial] start');
 
   await new Promise(async (resolve) => {
@@ -128,7 +150,7 @@ export async function showLevelInterstitialAd() {
     try {
       console.log('[LevelInterstitial] prepare:start');
       await AdMob.prepareInterstitial({
-        adId: SCORE_INTERSTITIAL_AD_ID,
+        adId: interstitialAdId,
       });
       console.log('[LevelInterstitial] prepare:requested');
     } catch (error) {

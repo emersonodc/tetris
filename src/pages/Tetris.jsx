@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '../components/tetris/SplashScreen';
 import { Play, Pause, RotateCcw } from 'lucide-react';
@@ -31,6 +32,8 @@ export default function Tetris() {
   const [lines, setLines] = useState(0);
   const [gameState, setGameState] = useState('idle'); // idle, playing, paused, transition, gameover
   const [pendingScoreInterstitial, setPendingScoreInterstitial] = useState(null);
+  const [isRestartingFromGameOver, setIsRestartingFromGameOver] = useState(false);
+  const [isQuittingFromPause, setIsQuittingFromPause] = useState(false);
   const [highScore, setHighScore] = useState(() => {
     const saved = localStorage.getItem('tetris_highscore');
     return saved ? parseInt(saved) : 0;
@@ -255,6 +258,50 @@ export default function Tetris() {
     setGameState('playing');
   }, []);
 
+  const restartFromGameOver = useCallback(async () => {
+    if (isRestartingFromGameOver) return;
+
+    if (Capacitor.getPlatform() !== 'android') {
+      startGame();
+      return;
+    }
+
+    setIsRestartingFromGameOver(true);
+
+    try {
+      console.log('[Tetris] gameOverRestart:start');
+      await showLevelInterstitialAd();
+    } catch (error) {
+      console.error('[Tetris] gameOverRestart:error', error);
+    } finally {
+      console.log('[Tetris] gameOverRestart:startGame');
+      startGame();
+      setIsRestartingFromGameOver(false);
+    }
+  }, [isRestartingFromGameOver, startGame]);
+
+  const quitFromPause = useCallback(async () => {
+    if (isQuittingFromPause) return;
+
+    if (Capacitor.getPlatform() !== 'android') {
+      setGameState('idle');
+      return;
+    }
+
+    setIsQuittingFromPause(true);
+
+    try {
+      console.log('[Tetris] pauseQuit:start');
+      await showLevelInterstitialAd();
+    } catch (error) {
+      console.error('[Tetris] pauseQuit:error', error);
+    } finally {
+      console.log('[Tetris] pauseQuit:goIdle');
+      setGameState('idle');
+      setIsQuittingFromPause(false);
+    }
+  }, [isQuittingFromPause]);
+
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -359,11 +406,12 @@ export default function Tetris() {
                 </Button>
               ) : gameState === 'gameover' ? (
                 <Button
-                  onClick={startGame}
+                  onClick={restartFromGameOver}
+                  disabled={isRestartingFromGameOver}
                   className="w-full bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30"
                   variant="outline"
                 >
-                  <RotateCcw className="w-4 h-4 mr-2" /> Reiniciar
+                  <RotateCcw className="w-4 h-4 mr-2" /> {isRestartingFromGameOver ? 'Carregando' : 'Reiniciar'}
                 </Button>
               ) : (
                 <Button
@@ -398,8 +446,8 @@ export default function Tetris() {
               <Play className="w-4 h-4 mr-2" /> Jogar
             </Button>
           ) : gameState === 'gameover' ? (
-            <Button onClick={startGame} className="w-full bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30 h-11 text-sm" variant="outline">
-              <RotateCcw className="w-4 h-4 mr-2" /> Reiniciar
+            <Button onClick={restartFromGameOver} disabled={isRestartingFromGameOver} className="w-full bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30 h-11 text-sm" variant="outline">
+              <RotateCcw className="w-4 h-4 mr-2" /> {isRestartingFromGameOver ? 'Carregando' : 'Reiniciar'}
             </Button>
           ) : (
             <>
@@ -427,8 +475,8 @@ export default function Tetris() {
               <Button onClick={togglePause} className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30" variant="outline">
                 <Play className="w-4 h-4 mr-2" /> Continuar
               </Button>
-              <Button onClick={() => setGameState('idle')} className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30" variant="outline">
-                <RotateCcw className="w-4 h-4 mr-2" /> Desistir
+              <Button onClick={quitFromPause} disabled={isQuittingFromPause} className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30" variant="outline">
+                <RotateCcw className="w-4 h-4 mr-2" /> {isQuittingFromPause ? 'Carregando' : 'Desistir'}
               </Button>
             </div>
           </div>
@@ -455,8 +503,8 @@ export default function Tetris() {
                   </p>
                 )}
               </div>
-              <Button onClick={startGame} className="bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30" variant="outline">
-                <RotateCcw className="w-4 h-4 mr-2" /> Jogar Novamente
+              <Button onClick={restartFromGameOver} disabled={isRestartingFromGameOver} className="bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30" variant="outline">
+                <RotateCcw className="w-4 h-4 mr-2" /> {isRestartingFromGameOver ? 'Carregando' : 'Jogar Novamente'}
               </Button>
             </div>
           </div>
