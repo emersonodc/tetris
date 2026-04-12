@@ -16,13 +16,13 @@ export default function GameControls({ onMove, onRotate, onDrop, onSoftDrop }) {
     clearInterval(repeatRef.current);
   };
 
-  const btnClass = "w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-black/60 border border-cyan-500/30 flex items-center justify-center active:bg-cyan-500/20 active:scale-95 transition-all select-none";
-  const rotateClass = "w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-black/60 border border-fuchsia-500/30 flex items-center justify-center active:bg-fuchsia-500/20 active:scale-95 transition-all select-none";
-  const dropClass = "w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-black/60 border border-yellow-500/30 flex items-center justify-center active:bg-yellow-500/20 active:scale-95 transition-all select-none";
+  const btnClass = "w-full aspect-square rounded-lg bg-black/60 border border-cyan-500/30 flex items-center justify-center active:bg-cyan-500/20 active:scale-95 transition-all select-none";
+  const rotateClass = "w-full aspect-square rounded-lg bg-black/60 border border-fuchsia-500/30 flex items-center justify-center active:bg-fuchsia-500/20 active:scale-95 transition-all select-none";
+  const dropClass = "w-full aspect-square rounded-lg bg-black/60 border border-yellow-500/30 flex items-center justify-center active:bg-yellow-500/20 active:scale-95 transition-all select-none";
 
   return (
-    <div className="md:hidden mt-1">
-      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+    <div className="md:hidden mt-1 w-full">
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
         <button
           className={btnClass}
           onClick={() => onMove(-1)}

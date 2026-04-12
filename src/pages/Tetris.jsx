@@ -20,6 +20,7 @@ import {
 } from '../lib/tetrisEngine';
 
 export default function Tetris() {
+  const boardWidthClass = "w-full max-w-[min(84vw,calc((100dvh-17rem-env(safe-area-inset-bottom))/2))] sm:max-w-[min(80vw,calc((100dvh-17.5rem-env(safe-area-inset-bottom))/2))] md:w-[300px] md:max-w-none";
   const [board, setBoard] = useState(createEmptyBoard());
   const [currentPiece, setCurrentPiece] = useState(null);
   const [nextPiece, setNextPiece] = useState(null);
@@ -282,7 +283,7 @@ export default function Tetris() {
           </div>
 
           {/* Board */}
-          <div className="w-full max-w-[min(84vw,calc((100dvh-17rem-env(safe-area-inset-bottom))/2))] sm:max-w-[min(80vw,calc((100dvh-17.5rem-env(safe-area-inset-bottom))/2))] md:w-[300px] md:max-w-none">
+          <div className={boardWidthClass}>
             <GameBoard board={board} currentPiece={currentPiece} />
           </div>
 
@@ -337,7 +338,7 @@ export default function Tetris() {
         </div>
 
         {/* Mobile controls */}
-        <div className="md:hidden shrink-0 mt-1 w-full max-w-sm pb-[env(safe-area-inset-bottom)]">
+        <div className={`md:hidden shrink-0 mt-1 pb-[env(safe-area-inset-bottom)] ${boardWidthClass}`}>
           {gameState === 'idle' ? (
             <Button onClick={startGame} className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 h-11 text-sm" variant="outline">
               <Play className="w-4 h-4 mr-2" /> Jogar
