@@ -254,7 +254,7 @@ export default function Tetris() {
         }} />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center min-h-dvh md:min-h-screen h-dvh md:h-auto overflow-hidden py-2 md:py-4 px-3 md:px-4">
+      <div className="relative z-10 flex flex-col items-center min-h-dvh md:min-h-screen h-dvh md:h-auto overflow-hidden pt-2 md:pt-4 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] md:pb-4 px-3 md:px-4">
         {/* Title */}
         <h1 className="w-full shrink-0 text-center text-xl sm:text-2xl md:text-4xl font-bold tracking-[0.22em] sm:tracking-[0.28em] md:tracking-[0.4em] uppercase mb-1 md:mb-4 text-transparent bg-clip-text"
           style={{
@@ -282,7 +282,7 @@ export default function Tetris() {
           </div>
 
           {/* Board */}
-          <div className="w-full max-w-[min(88vw,calc((100dvh-13rem)/2))] sm:max-w-[min(84vw,calc((100dvh-13.5rem)/2))] md:w-[300px] md:max-w-none">
+          <div className="w-full max-w-[min(84vw,calc((100dvh-17rem-env(safe-area-inset-bottom))/2))] sm:max-w-[min(80vw,calc((100dvh-17.5rem-env(safe-area-inset-bottom))/2))] md:w-[300px] md:max-w-none">
             <GameBoard board={board} currentPiece={currentPiece} />
           </div>
 
@@ -337,7 +337,7 @@ export default function Tetris() {
         </div>
 
         {/* Mobile controls */}
-        <div className="md:hidden shrink-0 mt-1 w-full max-w-sm">
+        <div className="md:hidden shrink-0 mt-1 w-full max-w-sm pb-[env(safe-area-inset-bottom)]">
           {gameState === 'idle' ? (
             <Button onClick={startGame} className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 h-11 text-sm" variant="outline">
               <Play className="w-4 h-4 mr-2" /> Jogar
