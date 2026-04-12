@@ -7,6 +7,7 @@ import GameBoard from '../components/tetris/GameBoard';
 import NextPiece from '../components/tetris/NextPiece';
 import GameStats from '../components/tetris/GameStats';
 import GameControls from '../components/tetris/GameControls';
+import { showLevelInterstitialAd } from '../lib/admob';
 import {
   createEmptyBoard,
   getRandomPiece,
@@ -20,6 +21,7 @@ import {
 } from '../lib/tetrisEngine';
 
 export default function Tetris() {
+  const INTERSTITIAL_SCORE_STEP = 1000;
   const boardWidthClass = "w-full max-w-[min(84vw,calc((100dvh-17rem-env(safe-area-inset-bottom))/2))] sm:max-w-[min(80vw,calc((100dvh-17.5rem-env(safe-area-inset-bottom))/2))] md:w-[300px] md:max-w-none";
   const [board, setBoard] = useState(createEmptyBoard());
   const [currentPiece, setCurrentPiece] = useState(null);
@@ -27,7 +29,8 @@ export default function Tetris() {
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(0);
   const [lines, setLines] = useState(0);
-  const [gameState, setGameState] = useState('idle'); // idle, playing, paused, gameover
+  const [gameState, setGameState] = useState('idle'); // idle, playing, paused, transition, gameover
+  const [pendingScoreInterstitial, setPendingScoreInterstitial] = useState(null);
   const [highScore, setHighScore] = useState(() => {
     const saved = localStorage.getItem('tetris_highscore');
     return saved ? parseInt(saved) : 0;
@@ -38,12 +41,15 @@ export default function Tetris() {
   const currentPieceRef = useRef(currentPiece);
   const levelRef = useRef(level);
   const linesRef = useRef(lines);
+  const scoreRef = useRef(score);
   const gameStateRef = useRef(gameState);
+  const lastInterstitialBucketRef = useRef(0);
 
   boardRef.current = board;
   currentPieceRef.current = currentPiece;
   levelRef.current = level;
   linesRef.current = lines;
+  scoreRef.current = score;
   gameStateRef.current = gameState;
 
   const spawnPiece = useCallback(() => {
@@ -70,9 +76,10 @@ export default function Tetris() {
     setBoard(clearedBoard);
 
     if (linesCleared > 0) {
+      const nextScore = scoreRef.current + (POINTS[linesCleared] || 0) * (levelRef.current + 1);
       const newLines = linesRef.current + linesCleared;
       const newLevel = Math.floor(newLines / LINES_PER_LEVEL);
-      setScore(prev => prev + (POINTS[linesCleared] || 0) * (levelRef.current + 1));
+      setScore(nextScore);
       setLines(newLines);
       setLevel(newLevel);
     }
@@ -159,6 +166,48 @@ export default function Tetris() {
     };
   }, [gameState, level, moveDown]);
 
+  useEffect(() => {
+    if (gameState !== 'playing' || pendingScoreInterstitial !== null) return;
+
+    const currentBucket = Math.floor(score / INTERSTITIAL_SCORE_STEP);
+    if (currentBucket <= 0 || currentBucket <= lastInterstitialBucketRef.current) return;
+
+    lastInterstitialBucketRef.current = currentBucket;
+    console.log('[Tetris] scoreInterstitial:queued', {
+      score,
+      bucket: currentBucket,
+    });
+    setPendingScoreInterstitial(score);
+    setGameState('transition');
+  }, [gameState, pendingScoreInterstitial, score]);
+
+  useEffect(() => {
+    if (pendingScoreInterstitial === null || gameState !== 'transition') return;
+
+    let isCancelled = false;
+
+    const runScoreInterstitial = async () => {
+      console.log('[Tetris] scoreInterstitial:start', pendingScoreInterstitial);
+      try {
+        await showLevelInterstitialAd();
+      } catch (error) {
+        console.error('[Tetris] scoreInterstitial:error', error);
+      } finally {
+        if (!isCancelled) {
+          console.log('[Tetris] scoreInterstitial:resume', pendingScoreInterstitial);
+          setPendingScoreInterstitial(null);
+          setGameState('playing');
+        }
+      }
+    };
+
+    runScoreInterstitial();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [gameState, pendingScoreInterstitial]);
+
   // Prevent page scroll/zoom on game keys
   useEffect(() => {
     const preventScroll = (e) => {
@@ -186,11 +235,34 @@ export default function Tetris() {
     };
   }, []);
 
+  // Save high score
+  useEffect(() => {
+    if (gameState === 'gameover' && score > highScore) {
+      setHighScore(score);
+      localStorage.setItem('tetris_highscore', score.toString());
+    }
+  }, [gameState, score, highScore]);
+
+  const startGame = useCallback(() => {
+    setBoard(createEmptyBoard());
+    setCurrentPiece(null);
+    setNextPiece(null);
+    setScore(0);
+    setLevel(0);
+    setLines(0);
+    setPendingScoreInterstitial(null);
+    lastInterstitialBucketRef.current = 0;
+    setGameState('playing');
+  }, []);
+
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (gameStateRef.current !== 'playing') {
-        if (e.key === 'Enter' && gameStateRef.current === 'idle') startGame();
+        if (e.key === 'Enter' && gameStateRef.current === 'idle') {
+          e.preventDefault();
+          startGame();
+        }
         return;
       }
       switch (e.key) {
@@ -204,25 +276,7 @@ export default function Tetris() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [moveHorizontal, softDrop, rotatePiece, hardDrop]);
-
-  // Save high score
-  useEffect(() => {
-    if (gameState === 'gameover' && score > highScore) {
-      setHighScore(score);
-      localStorage.setItem('tetris_highscore', score.toString());
-    }
-  }, [gameState, score, highScore]);
-
-  const startGame = () => {
-    setBoard(createEmptyBoard());
-    setCurrentPiece(null);
-    setNextPiece(null);
-    setScore(0);
-    setLevel(0);
-    setLines(0);
-    setGameState('playing');
-  };
+  }, [moveHorizontal, softDrop, rotatePiece, hardDrop, startGame]);
 
   const togglePause = () => {
     setGameState(prev => prev === 'playing' ? 'paused' : 'playing');

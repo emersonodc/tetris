@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
 
-export default function SplashScreen({ highScore, onStart }) {
+export default function SplashScreen({ highScore, onStart, isStarting = false }) {
   return (
     <motion.div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black overflow-hidden"
@@ -94,7 +94,8 @@ export default function SplashScreen({ highScore, onStart }) {
         transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
         whileTap={{ scale: 0.95 }}
         onClick={onStart}
-        className="relative group px-12 py-4 rounded-lg font-bold tracking-[0.3em] uppercase text-lg cursor-pointer"
+        disabled={isStarting}
+        className="relative group px-12 py-4 rounded-lg font-bold tracking-[0.3em] uppercase text-lg cursor-pointer disabled:opacity-70 disabled:cursor-wait"
         style={{
           fontFamily: 'var(--font-orbitron)',
           background: 'linear-gradient(135deg, rgba(0,255,255,0.15), rgba(255,0,255,0.15))',
@@ -106,7 +107,7 @@ export default function SplashScreen({ highScore, onStart }) {
       >
         <span className="flex items-center gap-3">
           <Play className="w-5 h-5" />
-          JOGAR
+          {isStarting ? 'CARREGANDO' : 'JOGAR'}
         </span>
         {/* Animated border */}
         <motion.div
@@ -124,7 +125,7 @@ export default function SplashScreen({ highScore, onStart }) {
         transition={{ delay: 0.8 }}
         className="mt-6 text-cyan-400/25 font-mono text-xs tracking-widest"
       >
-        ou pressione ENTER
+        {isStarting ? 'aguarde um instante' : 'ou pressione ENTER'}
       </motion.p>
     </motion.div>
   );
