@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>PING PONG</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap');
+
+:root{
+  --cy:#00fff7; --pk:#ff006e; --yw:#ffee00; --gr:#39ff14;
+  --gc:0 0 8px #00fff7,0 0 22px #00fff7aa;
+  --gp:0 0 8px #ff006e,0 0 22px #ff006eaa;
+  --gy:0 0 6px #ffee00,0 0 18px #ffee00aa;
+  --gg:0 0 6px #39ff14,0 0 18px #39ff14aa;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#07070f;user-select:none;font-family:'Share Tech Mono',monospace}
+
+/* scanlines */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:200;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.055) 2px,rgba(0,0,0,.055) 4px)}
+/* vignette */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:199;
+  background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.72) 100%)}
+
+/* ── MAIN LAYOUT: canvas fills screen, overlays on top ── */
+#gameWrap{position:relative;width:100vw;height:100vh}
+canvas{display:block;width:100%;height:100%;position:absolute;inset:0}
+
+/* ── HUD (in-game score/pause bar) ── */
+#hud{
+  position:absolute;top:0;left:0;right:0;z-index:20;
+  display:none;align-items:center;justify-content:space-between;
+  padding:6px 14px;
+  background:transparent;
+  pointer-events:none;
+}
+#hud.vis{display:flex}
+#hud>*{pointer-events:auto}
+.hudScore{display:flex;align-items:center;gap:6px}
+.hudLbl{font-family:'Bebas Neue',cursive;font-size:clamp(.5rem,2.2vw,.72rem);letter-spacing:.25em;color:#333}
+.hudNum{font-family:'Bebas Neue',cursive;font-size:clamp(1.8rem,7vw,2.8rem);line-height:1;
+  text-shadow:0 2px 12px rgba(0,0,0,.8)}
+.hudNum.cy{color:var(--cy);text-shadow:var(--gc),0 2px 14px rgba(0,0,0,.9)}
+.hudNum.pk{color:var(--pk);text-shadow:var(--gp),0 2px 14px rgba(0,0,0,.9)}
+.hudSep{font-family:'Bebas Neue',cursive;font-size:clamp(1rem,4vw,1.6rem);color:#252540;align-self:center}
+.hudCenter{display:flex;flex-direction:column;align-items:center;gap:1px}
+.hudLevel{font-family:'Bebas Neue',cursive;font-size:clamp(.48rem,1.8vw,.68rem);letter-spacing:.3em;color:var(--gr);text-shadow:var(--gg)}
+.hudMode{font-family:'Bebas Neue',cursive;font-size:clamp(.4rem,1.4vw,.56rem);letter-spacing:.2em;color:#2a2a2a}
+
+.hudBtn{font-family:'Bebas Neue',cursive;font-size:clamp(.5rem,1.8vw,.72rem);letter-spacing:.2em;
+  padding:4px 10px;background:rgba(0,0,0,.55);border:1px solid #2a2a4a;color:#555;cursor:pointer;
+  transition:all .2s;backdrop-filter:blur(2px)}
+.hudBtn:active{background:rgba(255,255,255,.08)}
+
+/* ── OVERLAYS ── */
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
+  justify-content:center;z-index:50;padding:20px 16px;text-align:center;gap:0}
+.ov.show{display:flex}
+.ov-bg{background:rgba(0,0,0,.88)}
+.ov-glass{background:rgba(4,4,14,.92);backdrop-filter:blur(2px)}
+
+/* ── Typography ── */
+.ttl{font-family:'Bebas Neue',cursive;font-size:clamp(2.6rem,10vw,4.5rem);
+  letter-spacing:.55em;color:var(--cy);text-shadow:var(--gc);animation:flicker 7s infinite}
+@keyframes flicker{0%,94%,100%{opacity:1}95%{opacity:.7}96%{opacity:1}97.5%{opacity:.5}98.5%{opacity:1}}
+
+.stl{font-family:'Bebas Neue',cursive;font-size:clamp(1.4rem,5.5vw,2.8rem);
+  letter-spacing:.3em;color:var(--yw);text-shadow:var(--gy);line-height:1.25}
+.sub{font-size:clamp(.55rem,2.2vw,.78rem);color:#555;letter-spacing:.1em;line-height:1.7}
+.wt.cy{color:var(--cy);text-shadow:var(--gc);font-family:'Bebas Neue',cursive;font-size:clamp(1rem,4vw,1.8rem);letter-spacing:.3em}
+.wt.pk{color:var(--pk);text-shadow:var(--gp);font-family:'Bebas Neue',cursive;font-size:clamp(1rem,4vw,1.8rem);letter-spacing:.3em}
+
+/* ── Buttons ── */
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+.btn{font-family:'Bebas Neue',cursive;letter-spacing:.25em;background:transparent;cursor:pointer;transition:all .18s;
+  border:1px solid var(--cy);color:var(--cy);text-shadow:var(--gc);box-shadow:var(--gc),inset 0 0 12px #00fff710}
+.btn:active{background:#00fff718}
+.btn.lg{font-size:clamp(1.1rem,4.5vw,1.6rem);padding:clamp(12px,3vw,18px) clamp(36px,8vw,64px)}
+.btn.md{font-size:clamp(.85rem,3vw,1.1rem);padding:clamp(8px,2vw,12px) clamp(20px,4vw,36px)}
+.btn.sm{font-size:clamp(.7rem,2.3vw,.9rem);padding:clamp(6px,1.5vw,9px) clamp(14px,3vw,24px)}
+
+.btn.pk{border-color:var(--pk);color:var(--pk);text-shadow:var(--gp);box-shadow:var(--gp),inset 0 0 12px #ff006e10}
+.btn.pk:active{background:#ff006e18}
+.btn.gr{border-color:var(--gr);color:var(--gr);text-shadow:var(--gg);box-shadow:var(--gg),inset 0 0 12px #39ff1410}
+.btn.gr:active{background:#39ff1418}
+.btn.dim{border-color:#1c1c38;color:#4a4a6a;text-shadow:none;box-shadow:none}
+.btn.dim.on{border-color:var(--pk);color:var(--pk);text-shadow:var(--gp);box-shadow:var(--gp)}
+.btn.dim:active{background:#ffffff08}
+.btn.ghost{border-color:#252545;color:#555;text-shadow:none;box-shadow:none}
+.btn.ghost:active{background:#ffffff08}
+
+/* ── Menu specific ── */
+.menuSection{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.sectionLbl{font-family:'Bebas Neue',cursive;font-size:clamp(.55rem,2vw,.75rem);
+  letter-spacing:.4em;color:#333;border-bottom:1px solid #111125;padding-bottom:5px;
+  width:min(88vw,340px);text-align:center}
+.modeRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.diffRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+
+/* level badge */
+.lvlBadge{font-family:'Bebas Neue',cursive;font-size:clamp(.5rem,1.8vw,.7rem);letter-spacing:.3em;
+  padding:3px 9px;border:1px solid #222238;color:#444;display:inline-block}
+
+/* countdown overlay canvas-side */
+#countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:30;pointer-events:none}
+#countdown.vis{display:flex}
+#cdNum{font-family:'Bebas Neue',cursive;font-size:clamp(5rem,25vw,12rem);color:#ffee00;
+  text-shadow:0 0 40px #ffee00,0 0 80px #ffee00aa;animation:cdPop .55s ease-out}
+@keyframes cdPop{from{transform:scale(1.8);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ── Config ── */
+#cfgOv{position:absolute;inset:0;z-index:60;display:none;flex-direction:column;
+  align-items:center;justify-content:center;background:rgba(0,0,0,.96);gap:10px;padding:18px}
+#cfgOv.show{display:flex}
+.ctit{font-family:'Bebas Neue',cursive;font-size:clamp(1.1rem,4vw,1.9rem);
+  letter-spacing:.4em;color:var(--yw);text-shadow:var(--gy)}
+.csub{font-size:clamp(.48rem,1.6vw,.64rem);color:#444;letter-spacing:.07em;text-align:center}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px 18px;width:min(88vw,380px)}
+.cch{font-family:'Bebas Neue',cursive;font-size:clamp(.68rem,2.3vw,.88rem);letter-spacing:.3em;
+  text-align:center;padding-bottom:4px;border-bottom:1px solid #0e0e22;margin-bottom:2px}
+.cch.cy{color:var(--cy);text-shadow:var(--gc)}.cch.pk{color:var(--pk);text-shadow:var(--gp)}
+.crow{display:flex;align-items:center;justify-content:space-between;gap:5px}
+.clb{font-size:clamp(.5rem,1.5vw,.64rem);color:#555;letter-spacing:.07em;white-space:nowrap}
+.kb{font-family:'Share Tech Mono',monospace;font-size:clamp(.5rem,1.5vw,.64rem);
+  min-width:58px;padding:5px 7px;text-align:center;background:#0a0a18;
+  border:1px solid #161630;color:#777;cursor:pointer;transition:all .15s}
+.kb:active{border-color:#555}
+.kb.ls{border-color:var(--yw);color:var(--yw);text-shadow:var(--gy);animation:kp .45s infinite alternate}
+@keyframes kp{from{opacity:.3}to{opacity:1}}
+.cmsg{font-size:clamp(.48rem,1.5vw,.63rem);color:var(--pk);text-shadow:var(--gp);
+  min-height:1.2em;text-align:center;letter-spacing:.05em}
+
+/* touch hint strip */
+.thint{position:absolute;font-family:'Bebas Neue',cursive;
+  font-size:clamp(.42rem,1.5vw,.65rem);letter-spacing:.3em;
+  color:rgba(255,255,255,.05);pointer-events:none;writing-mode:vertical-rl}
+/* vertical table: paddles at top/bottom → touch left half = top, right half = bottom */
+.thint.T{top:12%;left:50%;transform:translateX(-50%) rotate(180deg)}
+.thint.B{bottom:12%;left:50%;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div id="gameWrap">
+  <canvas id="c"></canvas>
+
+  <!-- Touch hints -->
+  <div class="thint T" id="thT">DESLIZE</div>
+  <div class="thint B" id="thB">DESLIZE</div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hudScore">
+      <div class="hudNum pk" id="hScT">0</div>
+      <div class="hudLbl" id="hudLblT" style="color:#ff006e55">VERM</div>
+    </div>
+    <div class="hudCenter">
+      <div class="hudLevel" id="hudLvl"></div>
+      <div class="hudMode" id="hudMode"></div>
+      <button class="hudBtn" onclick="togglePause()">⏸ PAUSA</button>
+    </div>
+    <div class="hudScore">
+      <div class="hudLbl" id="hudLblB" style="color:#00fff755">AZUL</div>
+      <div class="hudNum cy" id="hScB">0</div>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div id="countdown"><span id="cdNum">3</span></div>
+
+  <!-- ═══ MENU ═══ -->
+  <div class="ov ov-bg show" id="menuOv">
+    <div class="menuSection" style="gap:6px;margin-bottom:6px">
+      <div class="ttl" style="margin-bottom:4px">PING<br>PONG</div>
+    </div>
+
+    <!-- INICIAR (grande, em cima) -->
+    <div class="menuSection" style="margin-bottom:14px">
+      <button class="btn lg" onclick="startGame()">▶ INICIAR</button>
+    </div>
+
+    <!-- Modo de jogo -->
+    <div class="menuSection" style="margin-bottom:10px">
+      <div class="sectionLbl">MODO DE JOGO</div>
+      <div class="modeRow">
+        <button class="btn dim on" id="bBot" onclick="setMode('bot')">🤖 vs CPU</button>
+        <button class="btn dim"    id="bVs"  onclick="setMode('vs')">👥 2 Jogadores</button>
+      </div>
+    </div>
+
+    <!-- Dificuldade (só aparece no modo bot) -->
+    <div class="menuSection" id="diffSection" style="margin-bottom:10px">
+      <div class="sectionLbl">DIFICULDADE</div>
+      <div class="diffRow">
+        <button class="btn dim on" id="dNorm" onclick="setDiff('normal')">⚡ Normal</button>
+        <button class="btn dim"    id="dHard" onclick="setDiff('hard')">🔥 Difícil</button>
+      </div>
+      <div id="hardDesc" style="display:none;margin-top:6px">
+        <span class="sub" style="color:#444;font-size:clamp(.48rem,1.8vw,.65rem)">
+          A cada 10 pts sobe de nível (até nível 5).<br>Velocidade aumenta com o nível.
+        </span>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn sm ghost" onclick="openCfg()">⚙ Controles</button>
+    </div>
+
+    <p class="sub" id="ctrlDesc" style="margin-top:10px;color:#333;font-size:clamp(.48rem,1.7vw,.65rem)"></p>
+  </div>
+
+  <!-- ═══ PAUSE / END ═══ -->
+  <div class="ov ov-glass" id="pauseOv">
+    <div class="stl" id="pvTitle" style="margin-bottom:10px"></div>
+    <p class="sub" id="pvSub" style="margin-bottom:16px"></p>
+    <div class="row" id="pvBtns"></div>
+  </div>
+
+  <!-- ═══ CONFIG ═══ -->
+  <div id="cfgOv">
+    <div class="ctit">⚙ CONTROLES</div>
+    <p class="csub">Toque num botão e pressione a tecla desejada</p>
+    <div class="cgrid">
+      <div class="cch pk">🔴 VERMELHO (cima) — A D</div>
+      <div class="cch cy">🔵 AZUL (baixo) — ← →</div>
+      <div class="crow"><span class="clb">◀ ESQ</span>  <button class="kb" id="k-p1l" onclick="sListen('p1l',this)"></button></div>
+      <div class="crow"><span class="clb">◀ ESQ</span>  <button class="kb" id="k-p2l" onclick="sListen('p2l',this)"></button></div>
+      <div class="crow"><span class="clb">▶ DIR</span>  <button class="kb" id="k-p1r" onclick="sListen('p1r',this)"></button></div>
+      <div class="crow"><span class="clb">▶ DIR</span>  <button class="kb" id="k-p2r" onclick="sListen('p2r',this)"></button></div>
+      <div class="crow" style="grid-column:1/-1;justify-content:center;gap:12px;
+           padding-top:8px;border-top:1px solid #0e0e22;margin-top:2px">
+        <span class="clb">PAUSAR</span>
+        <button class="kb" id="k-pau" onclick="sListen('pau',this)"></button>
+      </div>
+    </div>
+    <div class="cmsg" id="cmsg"></div>
+    <div class="row">
+      <button class="btn md"     onclick="closeCfg()">✔ SALVAR</button>
+      <button class="btn sm dim" onclick="resetBindings()">↺ PADRÃO</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  KEY BINDINGS
+// ══════════════════════════════════════════════════
+// Vertical table: paddles move LEFT/RIGHT (horizontal)
+// P1 = top paddle, P2/CPU = bottom paddle
+// P1 = top = AZUL  → setas ← →
+// P2 = bot = VERMELHO → A D
+const DEF={p1l:'a',p1r:'d',p2l:'ArrowLeft',p2r:'ArrowRight',pau:'p'};
+let B=Object.assign({},DEF);
+try{const s=localStorage.getItem('pp_v4');if(s)B=JSON.parse(s);}catch(e){}
+function saveB(){try{localStorage.setItem('pp_v4',JSON.stringify(B));}catch(e){}}
+function kLbl(k){
+  const m={ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',' ':'SPC',
+    Enter:'ENT',Shift:'SHF',Control:'CTL',Alt:'ALT',Tab:'TAB',Backspace:'BKSP'};
+  return(m[k]||k).toUpperCase().slice(0,6);
+}
+function renderKB(){['p1l','p1r','p2l','p2r','pau'].forEach(a=>document.getElementById('k-'+a).textContent=kLbl(B[a]));}
+
+let LS=null;
+function sListen(action,el){cancelLS();LS={action,el};el.classList.add('ls');el.textContent='…';document.getElementById('cmsg').textContent='Pressione qualquer tecla';}
+function cancelLS(){if(!LS)return;LS.el.classList.remove('ls');LS=null;renderKB();document.getElementById('cmsg').textContent='';}
+function openCfg(){cancelLS();renderKB();document.getElementById('cfgOv').classList.add('show');}
+function closeCfg(){cancelLS();saveB();document.getElementById('cfgOv').classList.remove('show');updateCtrlDesc();}
+function resetBindings(){B=Object.assign({},DEF);renderKB();document.getElementById('cmsg').textContent='';cancelLS();}
+
+window.addEventListener('keydown',e=>{
+  if(LS){
+    e.preventDefault();
+    const k=e.key;
+    if(['Escape','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'].includes(k)){
+      document.getElementById('cmsg').textContent='Tecla reservada.';cancelLS();return;
+    }
+    const c=Object.entries(B).find(([a,v])=>a!==LS.action&&v===k);
+    if(c){document.getElementById('cmsg').textContent='Conflito com outra tecla.';cancelLS();return;}
+    B[LS.action]=k;
+    document.getElementById('cmsg').textContent='✓ Salvo!';
+    setTimeout(()=>{if(document.getElementById('cmsg').textContent==='✓ Salvo!')document.getElementById('cmsg').textContent='';},1400);
+    cancelLS();return;
+  }
+  keys[e.key]=true;
+  if(e.key===B.pau) togglePause();
+  if(['ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+},true);
+window.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+// ══════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════
+const cv=document.getElementById('c');
+const ctx=cv.getContext('2d');
+const wrap=document.getElementById('gameWrap');
+
+// VERTICAL TABLE:
+// Paddles at TOP and BOTTOM, moving LEFT/RIGHT
+// Ball moves UP/DOWN
+// P1 = top (cyan), P2/CPU = bottom (pink)
+
+const PH=0.025;   // paddle height (thin, fraction of canvas height)
+const PW=0.22;    // paddle width  (fraction of canvas width)
+const BR=0.020;   // ball radius   (fraction of canvas width)
+const PM=0.08;    // paddle margin from top/bottom edge (bigger so not hidden under HUD)
+const WIN=7;
+
+// Difficulty / Hard mode
+const HARD_LEVELS=[
+  {pts:0,  label:'NV 1', spd:1.0, cpu:0.76},
+  {pts:10, label:'NV 2', spd:1.22, cpu:0.82},
+  {pts:20, label:'NV 3', spd:1.48, cpu:0.87},
+  {pts:30, label:'NV 4', spd:1.78, cpu:0.91},
+  {pts:40, label:'NV 5', spd:2.12, cpu:0.95},
+];
+const SPD0=0.0072; // base ball speed (fraction of canvas width per frame @60fps)
+
+let mode='bot', diff='normal';
+let run=false, paused=false, gameOver=false, scoring=false;
+let scores=[0,0];
+let hardLevel=0; // index into HARD_LEVELS
+const keys={};
+let tp={x:0,y:0}, bp={x:0,y:0}; // top paddle, bottom paddle (x = center)
+let ball, parts=[];
+let lt=0, aid=null;
+
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function resize(){
+  cv.width=wrap.clientWidth;
+  cv.height=wrap.clientHeight;
+  resetPos();
+}
+
+function resetPos(){
+  if(!cv.width||!cv.height)return;
+  const W=cv.width,H=cv.height;
+  tp={x:W/2,y:H*PM};
+  bp={x:W/2,y:H*(1-PM)};
+  resetBall(1); // azul sempre sai primeiro → bola vai para baixo
+}
+
+function currentSpd(){
+  const W=cv.width;
+  const base=W*SPD0;
+  if(diff==='hard'){
+    const lv=HARD_LEVELS[hardLevel];
+    return base*lv.spd;
+  }
+  // normal: slight progressive increase
+  return base*(1+(scores[0]+scores[1])*.012);
+}
+
+function resetBall(dir){
+  const W=cv.width,H=cv.height;
+  const spd=currentSpd();
+  const ang=(Math.random()*.7-.35);
+  // dir: 1 = toward bottom (P2 side), -1 = toward top (P1 side), 0 = random
+  const d=dir===0?(Math.random()<.5?1:-1):dir;
+  ball={
+    x:W/2, y:H/2,
+    // Ball moves UP/DOWN in vertical table
+    vx:spd*Math.sin(ang)*d,
+    vy:spd*Math.cos(ang)*d,
+    r:W*BR,
+    trail:[]
+  };
+}
+
+// ── Hard mode level check ──
+function checkLevel(){
+  if(diff!=='hard') return;
+  const total=scores[0]+scores[1];
+  let newLv=0;
+  for(let i=HARD_LEVELS.length-1;i>=0;i--){
+    if(total>=HARD_LEVELS[i].pts){newLv=i;break;}
+  }
+  if(newLv!==hardLevel){
+    hardLevel=newLv;
+    updateHudLevel();
+    // brief level-up flash
+    const el=document.getElementById('hudLvl');
+    el.style.color='#fff';
+    setTimeout(()=>{el.style.color='';},600);
+  }
+}
+
+function updateHudLevel(){
+  const el=document.getElementById('hudLvl');
+  if(diff==='hard'){
+    el.textContent=HARD_LEVELS[hardLevel].label;
+    el.style.display='block';
+  } else {
+    el.textContent='';
+    el.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  TOUCH CONTROLS
+//  Vertical table: top half of screen → top paddle (P1)
+//                  bottom half         → bottom paddle (P2 / also P1 in bot mode)
+// ══════════════════════════════════════════════════
+const tmap={};
+
+wrap.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const rect=wrap.getBoundingClientRect();
+  for(const t of e.changedTouches){
+    const y=t.clientY-rect.top;
+    tmap[t.identifier]={side:y<cv.height/2?'T':'B',lastX:t.clientX};
+  }
+},{passive:false});
+
+wrap.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const W=cv.width, pw=W*PW;
+  const half=pw/2;
+  for(const t of e.changedTouches){
+    const info=tmap[t.identifier];
+    if(!info)continue;
+    const dx=t.clientX-info.lastX;
+    info.lastX=t.clientX;
+    if(!run||paused||gameOver)continue;
+    if(info.side==='T'){
+      if(mode==='vs') tp.x=cl(tp.x+dx,half,W-half);
+      else            bp.x=cl(bp.x+dx,half,W-half); // bot: toque cima também move azul
+    } else {
+      bp.x=cl(bp.x+dx,half,W-half); // toque baixo sempre move azul
+    }
+  }
+},{passive:false});
+
+wrap.addEventListener('touchend',  e=>{for(const t of e.changedTouches)delete tmap[t.identifier];});
+wrap.addEventListener('touchcancel',e=>{for(const t of e.changedTouches)delete tmap[t.identifier];});
+
+// ══════════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════════
+function gameLoop(ts){
+  if(!run||paused||gameOver)return;
+  const dt=cl((ts-lt)/16.667,.05,3);
+  lt=ts;
+  update(dt);
+  draw();
+  aid=requestAnimationFrame(gameLoop);
+}
+
+function update(dt){
+  const W=cv.width,H=cv.height;
+  const ph=H*PH, pw=W*PW;
+  const spd=W*.014*dt;
+  const half=pw/2;
+
+  // ── Top paddle: P1 keyboard (vs) OR CPU (bot) ──
+  if(mode==='vs'){
+    if(keys[B.p1l]) tp.x-=spd;
+    if(keys[B.p1r]) tp.x+=spd;
+  } else {
+    // CPU AI controla o vermelho (cima)
+    const cpuSpd=diff==='hard'
+      ? spd*HARD_LEVELS[hardLevel].cpu
+      : spd*cl(.72+scores[0]*.025,.5,1.35);
+    const diff2=ball.x-tp.x;
+    tp.x+=cl(diff2*.12*dt,-cpuSpd,cpuSpd);
+  }
+  tp.x=cl(tp.x,half,W-half);
+
+  // ── Bottom paddle: P2 keyboard (vs) OR jogador/azul (bot) ──
+  if(mode==='vs'){
+    if(keys[B.p2l]) bp.x-=spd;
+    if(keys[B.p2r]) bp.x+=spd;
+  } else {
+    // Jogador controla o azul (baixo) com ← →
+    if(keys[B.p2l]) bp.x-=spd;
+    if(keys[B.p2r]) bp.x+=spd;
+  }
+  bp.x=cl(bp.x,half,W-half);
+
+  // ── Ball ──
+  ball.trail.push({x:ball.x,y:ball.y});
+  if(ball.trail.length>14)ball.trail.shift();
+  ball.x+=ball.vx*dt;
+  ball.y+=ball.vy*dt;
+
+  // Left/right walls
+  if(ball.x-ball.r<0){    ball.x=ball.r;    ball.vx=Math.abs(ball.vx);  spawnPt(ball.x,ball.y,'#8899ff');}
+  if(ball.x+ball.r>W){    ball.x=W-ball.r;  ball.vx=-Math.abs(ball.vx); spawnPt(ball.x,ball.y,'#8899ff');}
+
+  // ── Top paddle (P1) collision — near top ──
+  const tpTop=tp.y-ph/2, tpBot=tp.y+ph/2;
+  const tpL=tp.x-pw/2, tpR=tp.x+pw/2;
+  if(ball.vy<0 && ball.y-ball.r<tpBot && ball.y+ball.r>tpTop &&
+     ball.x>tpL-ball.r*.4 && ball.x<tpR+ball.r*.4){
+    ball.y=tpBot+ball.r;
+    deflect(ball,tp.x,'top');
+    spawnPt(ball.x,ball.y,'#00fff7');
+  }
+
+  // ── Bottom paddle (P2/CPU) collision — near bottom ──
+  const bpTop=bp.y-ph/2, bpBot=bp.y+ph/2;
+  const bpL=bp.x-pw/2, bpR=bp.x+pw/2;
+  if(ball.vy>0 && ball.y+ball.r>bpTop && ball.y-ball.r<bpBot &&
+     ball.x>bpL-ball.r*.4 && ball.x<bpR+ball.r*.4){
+    ball.y=bpTop-ball.r;
+    deflect(ball,bp.x,'bot');
+    spawnPt(ball.x,ball.y,'#ff006e');
+  }
+
+  // ── Score ──
+  if(!scoring){
+    if(ball.y-ball.r<0){  doScore(1); return; }   // past top   → P2/CPU scores
+    if(ball.y+ball.r>H){  doScore(0); return; }   // past bot   → P1 scores
+  }
+
+  // ── Particles ──
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt;
+    if(p.life<=0)parts.splice(i,1);
+  }
+}
+
+function deflect(b,padCx,side){
+  const W=cv.width;
+  const relX=(b.x-padCx)/(W*PW/2);
+  const ang=cl(relX*1.2,-1.15,1.15);
+  const spd=cl(Math.hypot(b.vx,b.vy)*1.055,0,W*.026);
+  const dir=side==='top'?1:-1; // top paddle bounces ball DOWN, bottom bounces UP
+  b.vy=dir*spd*Math.cos(ang);
+  b.vx=     spd*Math.sin(ang);
+}
+
+// ── 1-second countdown then resume ──
+function doScore(who){
+  scoring=true;
+  if(aid){cancelAnimationFrame(aid);aid=null;}
+  scores[who]++;
+  document.getElementById('hScT').textContent=scores[0];
+  document.getElementById('hScB').textContent=scores[1];
+  checkLevel();
+
+  // Burst on the losing side
+  const bx=cv.width/2+((Math.random()-.5)*cv.width*.3);
+  const by=cv.height*(who===0?.12:.88);
+  for(let i=0;i<70;i++)spawnPt(bx,by,who===0?'#ff006e':'#00fff7',true);
+  draw();
+
+  if(scores[who]>=WIN){scoring=false;endGame(who);return;}
+
+  // 1-second countdown visual
+  let cd=1;
+  const cdEl=document.getElementById('cdNum');
+  const cdWrap=document.getElementById('countdown');
+
+  function showCd(){
+    cdEl.textContent=cd;
+    // force re-trigger animation
+    cdEl.style.animation='none';
+    cdEl.offsetHeight; // reflow
+    cdEl.style.animation='';
+    cdWrap.classList.add('vis');
+  }
+
+  showCd();
+  setTimeout(()=>{
+    cdWrap.classList.remove('vis');
+    if(!run||gameOver)return;
+    scoring=false;
+    // Bola vai em direção a quem sofreu o gol
+    // who=0 → P1 scored → bola vai para cima (para P1, dir=-1)
+    // who=1 → P2 scored → bola vai para baixo (para P2, dir=1)
+    resetBall(who===0?-1:1);
+    lt=performance.now();
+    aid=requestAnimationFrame(gameLoop);
+  },1000);
+}
+
+function spawnPt(x,y,color,burst=false){
+  const n=burst?28:5;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,s=(Math.random()*3+1)*(burst?5.5:1.8);
+    parts.push({x,y,color,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:Math.random()*24+14,maxLife:38});
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  DRAW
+// ══════════════════════════════════════════════════
+function draw(){
+  if(!ball||!cv.width)return;
+  const W=cv.width,H=cv.height;
+  const ph=H*PH, pw=W*PW;
+
+  // BG
+  ctx.fillStyle='#06060e'; ctx.fillRect(0,0,W,H);
+
+  // Court center tint (horizontal strip)
+  ctx.fillStyle='#07110a'; ctx.fillRect(0,ph*4,W,H-ph*8);
+
+  // Top/bottom glow bands
+  const gtop=ctx.createLinearGradient(0,0,0,ph*6);
+  gtop.addColorStop(0,'#00fff708'); gtop.addColorStop(1,'transparent');
+  ctx.fillStyle=gtop; ctx.fillRect(0,0,W,ph*6);
+  const gbot=ctx.createLinearGradient(0,H,0,H-ph*6);
+  gbot.addColorStop(0,'#ff006e08'); gbot.addColorStop(1,'transparent');
+  ctx.fillStyle=gbot; ctx.fillRect(0,H-ph*6,W,ph*6);
+
+  // Net (horizontal dashed line in center)
+  ctx.setLineDash([W*.025,W*.016]);
+  ctx.strokeStyle='#ffffff0e'; ctx.lineWidth=Math.max(2,H*.003);
+  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Center circle
+  const cr=Math.min(W,H)*.09;
+  ctx.strokeStyle='#0b1e0d'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(W/2,H/2,cr,0,Math.PI*2); ctx.stroke();
+
+  // Particles
+  for(const p of parts){
+    const a=p.life/p.maxLife;
+    ctx.globalAlpha=a; ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,3.8*a,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Ball trail
+  for(let i=0;i<ball.trail.length;i++){
+    const a=(i/ball.trail.length)*.44,r=ball.r*(i/ball.trail.length)*.9;
+    if(r<.5)continue;
+    ctx.globalAlpha=a; ctx.fillStyle='#ffee00';
+    ctx.beginPath(); ctx.arc(ball.trail[i].x,ball.trail[i].y,r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Ball
+  const bg=ctx.createRadialGradient(ball.x-ball.r*.3,ball.y-ball.r*.3,ball.r*.1,ball.x,ball.y,ball.r);
+  bg.addColorStop(0,'#fff'); bg.addColorStop(.4,'#ffee00'); bg.addColorStop(1,'#ff8800');
+  ctx.fillStyle=bg; ctx.shadowColor='#ffee00'; ctx.shadowBlur=28;
+  ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+
+  // Top paddle (vermelho)
+  dPad(tp.x-pw/2, tp.y-ph/2, pw, ph, '#ff006e','#3a0018');
+  // Bottom paddle (azul)
+  dPad(bp.x-pw/2, bp.y-ph/2, pw, ph, '#00fff7','#002a3a');
+}
+
+function dPad(x,y,w,h,cA,cB){
+  const r=Math.min(h*.6,w*.18);
+  ctx.shadowColor=cA; ctx.shadowBlur=22;
+  const g=ctx.createLinearGradient(x,y,x+w,y);
+  g.addColorStop(0,cB); g.addColorStop(.5,cA); g.addColorStop(1,cB);
+  ctx.fillStyle=g; rrect(x,y,w,h,r); ctx.fill(); ctx.shadowBlur=0;
+  // glare
+  ctx.fillStyle='rgba(255,255,255,.17)';
+  rrect(x+w*.05,y+h*.18,w*.9,h*.3,r*.4); ctx.fill();
+}
+
+function rrect(x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath(); ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+
+// ══════════════════════════════════════════════════
+//  UI FLOW
+// ══════════════════════════════════════════════════
+function updateCtrlDesc(){
+  const l1=kLbl(B.p1l),r1=kLbl(B.p1r),l2=kLbl(B.p2l),r2=kLbl(B.p2r),pa=kLbl(B.pau);
+  const p1=`${l1}/${r1} ou deslize na metade de cima`;
+  const p2=mode==='bot'
+    ? `Toque em qualquer lugar move sua raquete`
+    : `${l2}/${r2} ou deslize na metade de baixo`;
+  document.getElementById('ctrlDesc').innerHTML=
+    `<span style="color:var(--pk);opacity:.6">🔴 VERMELHO (cima): </span><span style="color:#444">${p1}</span><br>`+
+    `<span style="color:var(--cy);opacity:.6">🔵 ${mode==='bot'?'CPU (azul)':'AZUL'} (baixo): </span><span style="color:#444">${p2}</span><br>`+
+    `<span style="color:#333">${pa} → pausar</span>`;
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('bVs').classList.toggle('on',m==='vs');
+  document.getElementById('bBot').classList.toggle('on',m==='bot');
+  // Difficulty only for bot
+  document.getElementById('diffSection').style.display=m==='bot'?'flex':'none';
+  if(m==='vs'){setDiff('normal');} // reset to normal in vs mode
+  updateCtrlDesc();
+}
+
+function setDiff(d){
+  diff=d;
+  document.getElementById('dNorm').classList.toggle('on',d==='normal');
+  document.getElementById('dHard').classList.toggle('on',d==='hard');
+  document.getElementById('hardDesc').style.display=d==='hard'?'block':'none';
+}
+
+function startGame(){
+  scores=[0,0]; hardLevel=0;
+  document.getElementById('hScT').textContent='0';
+  document.getElementById('hScB').textContent='0';
+  document.getElementById('hudLblT').textContent=mode==='bot'?'CPU':'VERM';
+  document.getElementById('hudLblT').style.color='#ff006e55';
+  document.getElementById('hudLblB').textContent=mode==='bot'?'VOCÊ':'AZUL';
+  document.getElementById('hudLblB').style.color='#00fff755';
+  document.getElementById('hudMode').textContent=
+    (mode==='bot'?(diff==='hard'?'DIFÍCIL':'NORMAL'):'2 JOGADORES');
+  updateHudLevel();
+  parts=[]; run=true; paused=false; gameOver=false; scoring=false;
+  document.getElementById('menuOv').classList.remove('show');
+  document.getElementById('pauseOv').classList.remove('show');
+  document.getElementById('countdown').classList.remove('vis');
+  document.getElementById('hud').classList.add('vis');
+  resize();
+  lt=performance.now();
+  aid=requestAnimationFrame(gameLoop);
+}
+
+function togglePause(){
+  if(!run||gameOver)return;
+  paused=!paused;
+  if(!paused){
+    lt=performance.now();
+    document.getElementById('pauseOv').classList.remove('show');
+    aid=requestAnimationFrame(gameLoop);
+  } else {
+    draw();
+    showMsgOv('PAUSADO','',
+      [{label:'▶ RETOMAR', fn:togglePause,  cls:'btn md'},
+       {label:'🏠 DESISTIR',fn:gotoMenu,   cls:'btn md ghost'}]);
+  }
+}
+
+function showMsgOv(title,sub,btns){
+  document.getElementById('pvTitle').innerHTML=title;
+  document.getElementById('pvSub').textContent=sub;
+  const row=document.getElementById('pvBtns'); row.innerHTML='';
+  for(const b of btns){
+    const el=document.createElement('button');
+    el.className=b.cls||'btn md'; el.textContent=b.label; el.onclick=b.fn; row.appendChild(el);
+  }
+  document.getElementById('pauseOv').classList.add('show');
+}
+
+function endGame(winner){
+  run=false; gameOver=true;
+  document.getElementById('hud').classList.remove('vis');
+  document.getElementById('countdown').classList.remove('vis');
+  const names=['JOGADOR 1',mode==='bot'?'CPU':'JOGADOR 2'];
+  const cls=['cy','pk'];
+  const lvlTxt=diff==='hard'?` — ${HARD_LEVELS[hardLevel].label}`:'';
+  const title=`<span class="wt ${cls[winner]}">${names[winner]}</span><br>`+
+    `<span style="color:var(--yw);text-shadow:var(--gy);font-family:'Bebas Neue',cursive;`+
+    `font-size:clamp(1rem,4vw,2rem);letter-spacing:.4em">VENCEU!${lvlTxt}</span>`;
+  showMsgOv(title,`Placar final: ${scores[0]} × ${scores[1]}`,
+    [{label:'🔄 JOGAR NOVAMENTE',fn:restartGame,cls:'btn md'},
+     {label:'🏠 MENU',          fn:gotoMenu,   cls:'btn md ghost'}]);
+}
+
+function restartGame(){
+  if(aid)cancelAnimationFrame(aid);
+  run=false; gameOver=false; scoring=false;
+  document.getElementById('pauseOv').classList.remove('show');
+  document.getElementById('countdown').classList.remove('vis');
+  startGame();
+}
+
+function gotoMenu(){
+  if(aid)cancelAnimationFrame(aid);
+  run=false; gameOver=false; scoring=false; paused=false;
+  document.getElementById('countdown').classList.remove('vis');
+  document.getElementById('pauseOv').classList.remove('show');
+  document.getElementById('hud').classList.remove('vis');
+  document.getElementById('menuOv').classList.add('show');
+  scores=[0,0]; hardLevel=0;
+  resize(); draw();
+}
+
+window.addEventListener('resize',()=>{resize();if(!run)draw();});
+
+// ── Init ──
+renderKB();
+setMode('bot');   // CPU pré-selecionado
+setDiff('normal'); // Normal pré-selecionado
+updateCtrlDesc();
+resize();
+draw();
+</script>
+</body>
+</html>
