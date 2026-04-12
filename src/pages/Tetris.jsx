@@ -254,9 +254,9 @@ export default function Tetris() {
         }} />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center min-h-screen py-2 md:py-4 px-3 md:px-4">
+      <div className="relative z-10 flex flex-col items-center min-h-dvh md:min-h-screen h-dvh md:h-auto overflow-hidden py-2 md:py-4 px-3 md:px-4">
         {/* Title */}
-        <h1 className="w-full text-center text-2xl md:text-4xl font-bold tracking-[0.28em] md:tracking-[0.4em] uppercase mb-2 md:mb-4 text-transparent bg-clip-text"
+        <h1 className="w-full shrink-0 text-center text-xl sm:text-2xl md:text-4xl font-bold tracking-[0.22em] sm:tracking-[0.28em] md:tracking-[0.4em] uppercase mb-1 md:mb-4 text-transparent bg-clip-text"
           style={{
             backgroundImage: 'linear-gradient(135deg, #0ff, #f0f, #0ff)',
             textShadow: '0 0 40px rgba(0,255,255,0.3)',
@@ -265,24 +265,24 @@ export default function Tetris() {
         </h1>
 
         {/* High Score */}
-        <p className="text-[10px] md:text-xs tracking-[0.16em] md:tracking-[0.2em] text-cyan-400/40 font-mono mb-2 md:mb-4">
+        <p className="shrink-0 text-[9px] sm:text-[10px] md:text-xs tracking-[0.12em] sm:tracking-[0.16em] md:tracking-[0.2em] text-cyan-400/40 font-mono mb-1 md:mb-4">
           RECORDE: {highScore.toLocaleString()}
         </p>
 
-        <div className="md:hidden w-full max-w-sm mb-2 grid grid-cols-4 gap-1 items-stretch">
+        <div className="md:hidden shrink-0 w-full max-w-sm mb-1 grid grid-cols-4 gap-1 items-stretch">
           <NextPiece piece={nextPiece} compact className="h-full" />
           <GameStats score={score} level={level} lines={lines} compact horizontal className="col-span-3" />
         </div>
 
         {/* Game Area */}
-        <div className="flex gap-0 md:gap-6 items-start justify-center">
+        <div className="flex-1 min-h-0 w-full flex gap-0 md:gap-6 items-center md:items-start justify-center">
           {/* Stats - left side (desktop) */}
           <div className="hidden md:block w-36">
             <GameStats score={score} level={level} lines={lines} />
           </div>
 
           {/* Board */}
-          <div className="w-[82vw] max-w-[340px] md:w-[300px] md:max-w-none">
+          <div className="w-full max-w-[min(88vw,calc((100dvh-13rem)/2))] sm:max-w-[min(84vw,calc((100dvh-13.5rem)/2))] md:w-[300px] md:max-w-none">
             <GameBoard board={board} currentPiece={currentPiece} />
           </div>
 
@@ -337,14 +337,14 @@ export default function Tetris() {
         </div>
 
         {/* Mobile controls */}
-        <div className="md:hidden mt-2 w-full max-w-sm">
+        <div className="md:hidden shrink-0 mt-1 w-full max-w-sm">
           {gameState === 'idle' ? (
-            <Button onClick={startGame} className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 h-14 text-lg" variant="outline">
-              <Play className="w-5 h-5 mr-2" /> Jogar
+            <Button onClick={startGame} className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 h-11 text-sm" variant="outline">
+              <Play className="w-4 h-4 mr-2" /> Jogar
             </Button>
           ) : gameState === 'gameover' ? (
-            <Button onClick={startGame} className="w-full bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30 h-14 text-lg" variant="outline">
-              <RotateCcw className="w-5 h-5 mr-2" /> Reiniciar
+            <Button onClick={startGame} className="w-full bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30 h-11 text-sm" variant="outline">
+              <RotateCcw className="w-4 h-4 mr-2" /> Reiniciar
             </Button>
           ) : (
             <>
@@ -354,7 +354,7 @@ export default function Tetris() {
                 onDrop={hardDrop}
                 onSoftDrop={softDrop}
               />
-              <Button onClick={togglePause} className="w-full mt-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400/60 border border-cyan-500/20 h-10" variant="outline">
+              <Button onClick={togglePause} className="w-full mt-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400/60 border border-cyan-500/20 h-8 text-xs" variant="outline">
                 {gameState === 'paused' ? 'Continuar' : 'Pausar'}
               </Button>
             </>
