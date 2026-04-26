@@ -1,40 +1,29 @@
-**Welcome to your Base44 project** 
+# Tetrix
 
-**About**
+React + Capacitor mobile game.
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+## Development
 
-This project contains everything you need to run your app locally.
+Use Node.js 22 or newer, then install dependencies:
 
-**Edit the code in your local development environment**
-
-Any change pushed to the repo will also be reflected in the Base44 Builder.
-
-**Prerequisites:** 
-
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Use Node.js 22 or newer: `nvm use` (or `nvm use 22` if this is your first time in the repo)
-4. Install dependencies: `npm install`
-5. Create an `.env.local` file and set the right environment variables
-
-```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+```sh
+npm install
 ```
 
-Run the app: `npm run dev`
+Run the web app locally:
 
-**Publish your changes**
+```sh
+npm run dev
+```
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+Build the web app:
 
-**Docs & Support**
+```sh
+npm run build
+```
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+Sync the built web assets to the native Android project:
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+```sh
+npm run cap:sync
+```

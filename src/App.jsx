@@ -1,19 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLaunchSplash from '@/components/AppLaunchSplash';
 import { initializeAdMob, showStartGameAd } from '@/lib/admob';
 // Add page imports here
 import TetrixGame from './pages/Tetrix';
 
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+const AppShell = () => {
   const [isSplashMinTimeDone, setIsSplashMinTimeDone] = useState(false);
   const [isLaunchAdDone, setIsLaunchAdDone] = useState(() => Capacitor.getPlatform() !== 'ios');
 
@@ -31,7 +26,7 @@ const AuthenticatedApp = () => {
       return;
     }
 
-    if (!isSplashMinTimeDone || isLoadingPublicSettings || isLoadingAuth || authError || isLaunchAdDone) {
+    if (!isSplashMinTimeDone || isLaunchAdDone) {
       return;
     }
 
@@ -56,26 +51,9 @@ const AuthenticatedApp = () => {
     return () => {
       isCancelled = true;
     };
-  }, [authError, isLaunchAdDone, isLoadingAuth, isLoadingPublicSettings, isSplashMinTimeDone]);
+  }, [isLaunchAdDone, isSplashMinTimeDone]);
 
-  // Keep splash visible for a minimum duration and during app auth/bootstrap.
-  if (!isSplashMinTimeDone || isLoadingPublicSettings || isLoadingAuth) {
-    return <AppLaunchSplash />;
-  }
-
-  // This app does not depend on authenticated user state to render the game.
-  // If auth bootstrap fails, keep the game accessible instead of rendering a blank screen.
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      console.warn('[Auth] auth_required ignored for game shell');
-    } else {
-      console.warn('[Auth] bootstrap error ignored for game shell', authError);
-    }
-  }
-
-  if (!isLaunchAdDone) {
+  if (!isSplashMinTimeDone || !isLaunchAdDone) {
     return <AppLaunchSplash />;
   }
 
@@ -97,14 +75,10 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+    <Router>
+      <AppShell />
+      <Toaster />
+    </Router>
   )
 }
 
