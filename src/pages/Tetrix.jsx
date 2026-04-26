@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { AnimatePresence } from 'framer-motion';
-import SplashScreen from '../components/tetris/SplashScreen';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import SplashScreen from '../components/tetrix/SplashScreen';
+import { Play, Pause, RotateCcw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import GameBoard from '../components/tetris/GameBoard';
-import NextPiece from '../components/tetris/NextPiece';
-import GameStats from '../components/tetris/GameStats';
-import GameControls from '../components/tetris/GameControls';
+import GameBoard from '../components/tetrix/GameBoard';
+import NextPiece from '../components/tetrix/NextPiece';
+import GameStats from '../components/tetrix/GameStats';
+import GameControls from '../components/tetrix/GameControls';
 import { showLevelInterstitialAd } from '../lib/admob';
 import {
   createEmptyBoard,
@@ -19,9 +19,9 @@ import {
   getSpeed,
   POINTS,
   LINES_PER_LEVEL,
-} from '../lib/tetrisEngine';
+} from '../lib/tetrixEngine';
 
-export default function Tetris() {
+export default function TetrixGame() {
   const INTERSTITIAL_SCORE_STEP = 1000;
   const boardWidthClass = "w-full max-w-[min(84vw,calc((100dvh-17rem-env(safe-area-inset-bottom))/2))] sm:max-w-[min(80vw,calc((100dvh-17.5rem-env(safe-area-inset-bottom))/2))] md:w-[300px] md:max-w-none";
   const [board, setBoard] = useState(createEmptyBoard());
@@ -35,7 +35,7 @@ export default function Tetris() {
   const [isRestartingFromGameOver, setIsRestartingFromGameOver] = useState(false);
   const [isQuittingFromPause, setIsQuittingFromPause] = useState(false);
   const [highScore, setHighScore] = useState(() => {
-    const saved = localStorage.getItem('tetris_highscore');
+    const saved = localStorage.getItem('tetrix_highscore');
     return saved ? parseInt(saved) : 0;
   });
 
@@ -44,7 +44,6 @@ export default function Tetris() {
   const currentPieceRef = useRef(currentPiece);
   const levelRef = useRef(level);
   const linesRef = useRef(lines);
-  const scoreRef = useRef(score);
   const gameStateRef = useRef(gameState);
   const lastInterstitialBucketRef = useRef(0);
 
@@ -52,8 +51,14 @@ export default function Tetris() {
   currentPieceRef.current = currentPiece;
   levelRef.current = level;
   linesRef.current = lines;
-  scoreRef.current = score;
   gameStateRef.current = gameState;
+
+  const clearGameLoop = useCallback(() => {
+    if (gameLoopRef.current !== null) {
+      clearInterval(gameLoopRef.current);
+      gameLoopRef.current = null;
+    }
+  }, []);
 
   const spawnPiece = useCallback(() => {
     const piece = nextPiece || getRandomPiece();
@@ -79,10 +84,10 @@ export default function Tetris() {
     setBoard(clearedBoard);
 
     if (linesCleared > 0) {
-      const nextScore = scoreRef.current + (POINTS[linesCleared] || 0) * (levelRef.current + 1);
+      const lineClearScore = (POINTS[linesCleared] || 0) * (levelRef.current + 1);
       const newLines = linesRef.current + linesCleared;
       const newLevel = Math.floor(newLines / LINES_PER_LEVEL);
-      setScore(nextScore);
+      setScore(prev => prev + lineClearScore);
       setLines(newLines);
       setLevel(newLevel);
     }
@@ -90,11 +95,14 @@ export default function Tetris() {
     setCurrentPiece(null);
   }, []);
 
-  const moveDown = useCallback(() => {
+  const moveDown = useCallback((pointsPerLine = 0) => {
     const piece = currentPieceRef.current;
     if (!piece) return;
 
     if (isValidPosition(boardRef.current, piece.shape, piece.x, piece.y + 1)) {
+      if (pointsPerLine > 0) {
+        setScore(prev => prev + pointsPerLine);
+      }
       setCurrentPiece(prev => prev ? { ...prev, y: prev.y + 1 } : null);
     } else {
       lockPiece();
@@ -134,7 +142,9 @@ export default function Tetris() {
       dropY++;
     }
     const dropDistance = dropY - piece.y;
-    setScore(prev => prev + dropDistance * 2);
+    if (dropDistance > 0) {
+      setScore(prev => prev + dropDistance * 3);
+    }
     setCurrentPiece(prev => prev ? { ...prev, y: dropY } : null);
     // Lock immediately after state update
     setTimeout(() => lockPiece(), 0);
@@ -142,8 +152,7 @@ export default function Tetris() {
 
   const softDrop = useCallback(() => {
     if (gameStateRef.current !== 'playing') return;
-    setScore(prev => prev + 1);
-    moveDown();
+    moveDown(2);
   }, [moveDown]);
 
   // Spawn piece when current is null
@@ -156,18 +165,19 @@ export default function Tetris() {
   // Game loop
   useEffect(() => {
     if (gameState !== 'playing') {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+      clearGameLoop();
       return;
     }
 
+    clearGameLoop();
     gameLoopRef.current = setInterval(() => {
-      moveDown();
+      moveDown(1);
     }, getSpeed(level));
 
     return () => {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+      clearGameLoop();
     };
-  }, [gameState, level, moveDown]);
+  }, [clearGameLoop, gameState, level, moveDown]);
 
   useEffect(() => {
     if (gameState !== 'playing' || pendingScoreInterstitial !== null) return;
@@ -176,7 +186,7 @@ export default function Tetris() {
     if (currentBucket <= 0 || currentBucket <= lastInterstitialBucketRef.current) return;
 
     lastInterstitialBucketRef.current = currentBucket;
-    console.log('[Tetris] scoreInterstitial:queued', {
+    console.log('[Tetrix] scoreInterstitial:queued', {
       score,
       bucket: currentBucket,
     });
@@ -190,14 +200,14 @@ export default function Tetris() {
     let isCancelled = false;
 
     const runScoreInterstitial = async () => {
-      console.log('[Tetris] scoreInterstitial:start', pendingScoreInterstitial);
+      console.log('[Tetrix] scoreInterstitial:start', pendingScoreInterstitial);
       try {
         await showLevelInterstitialAd();
       } catch (error) {
-        console.error('[Tetris] scoreInterstitial:error', error);
+        console.error('[Tetrix] scoreInterstitial:error', error);
       } finally {
         if (!isCancelled) {
-          console.log('[Tetris] scoreInterstitial:resume', pendingScoreInterstitial);
+          console.log('[Tetrix] scoreInterstitial:resume', pendingScoreInterstitial);
           setPendingScoreInterstitial(null);
           setGameState('playing');
         }
@@ -242,11 +252,12 @@ export default function Tetris() {
   useEffect(() => {
     if (gameState === 'gameover' && score > highScore) {
       setHighScore(score);
-      localStorage.setItem('tetris_highscore', score.toString());
+      localStorage.setItem('tetrix_highscore', score.toString());
     }
   }, [gameState, score, highScore]);
 
   const startGame = useCallback(() => {
+    clearGameLoop();
     setBoard(createEmptyBoard());
     setCurrentPiece(null);
     setNextPiece(null);
@@ -256,7 +267,7 @@ export default function Tetris() {
     setPendingScoreInterstitial(null);
     lastInterstitialBucketRef.current = 0;
     setGameState('playing');
-  }, []);
+  }, [clearGameLoop]);
 
   const restartFromGameOver = useCallback(async () => {
     if (isRestartingFromGameOver) return;
@@ -269,12 +280,12 @@ export default function Tetris() {
     setIsRestartingFromGameOver(true);
 
     try {
-      console.log('[Tetris] gameOverRestart:start');
+      console.log('[Tetrix] gameOverRestart:start');
       await showLevelInterstitialAd();
     } catch (error) {
-      console.error('[Tetris] gameOverRestart:error', error);
+      console.error('[Tetrix] gameOverRestart:error', error);
     } finally {
-      console.log('[Tetris] gameOverRestart:startGame');
+      console.log('[Tetrix] gameOverRestart:startGame');
       startGame();
       setIsRestartingFromGameOver(false);
     }
@@ -291,12 +302,12 @@ export default function Tetris() {
     setIsQuittingFromPause(true);
 
     try {
-      console.log('[Tetris] pauseQuit:start');
+      console.log('[Tetrix] pauseQuit:start');
       await showLevelInterstitialAd();
     } catch (error) {
-      console.error('[Tetris] pauseQuit:error', error);
+      console.error('[Tetrix] pauseQuit:error', error);
     } finally {
-      console.log('[Tetris] pauseQuit:goIdle');
+      console.log('[Tetrix] pauseQuit:goIdle');
       setGameState('idle');
       setIsQuittingFromPause(false);
     }
@@ -328,6 +339,13 @@ export default function Tetris() {
   const togglePause = () => {
     setGameState(prev => prev === 'playing' ? 'paused' : 'playing');
   };
+
+  const goHome = useCallback(() => {
+    clearGameLoop();
+    setPendingScoreInterstitial(null);
+    setIsRestartingFromGameOver(false);
+    setGameState('idle');
+  }, [clearGameLoop]);
 
   return (
     <>
@@ -363,7 +381,7 @@ export default function Tetris() {
             backgroundImage: 'linear-gradient(135deg, #0ff, #f0f, #0ff)',
             textShadow: '0 0 40px rgba(0,255,255,0.3)',
           }}>
-          TETRIS
+          TETRIX
         </h1>
 
         {/* High Score */}
@@ -483,8 +501,8 @@ export default function Tetris() {
         )}
 
         {gameState === 'gameover' && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            <div className="text-center space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 px-4 py-6 backdrop-blur-sm">
+            <div className="w-full max-w-xs flex-shrink-0 text-center space-y-4">
               <h2 className="text-4xl font-bold tracking-[0.3em] text-transparent bg-clip-text"
                 style={{
                   backgroundImage: 'linear-gradient(135deg, #f00, #f0f)',
@@ -503,9 +521,14 @@ export default function Tetris() {
                   </p>
                 )}
               </div>
-              <Button onClick={restartFromGameOver} disabled={isRestartingFromGameOver} className="bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30" variant="outline">
-                <RotateCcw className="w-4 h-4 mr-2" /> {isRestartingFromGameOver ? 'Carregando' : 'Jogar Novamente'}
-              </Button>
+              <div className="space-y-2 pt-1">
+                <Button onClick={restartFromGameOver} disabled={isRestartingFromGameOver} className="w-full bg-fuchsia-500/20 hover:bg-fuchsia-500/30 text-fuchsia-400 border border-fuchsia-500/30" variant="outline">
+                  <RotateCcw className="w-4 h-4 mr-2" /> {isRestartingFromGameOver ? 'Carregando' : 'Jogar Novamente'}
+                </Button>
+                <Button onClick={goHome} className="w-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20" variant="outline">
+                  <Home className="w-4 h-4 mr-2" /> Home
+                </Button>
+              </div>
             </div>
           </div>
         )}

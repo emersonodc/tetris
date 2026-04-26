@@ -1,4 +1,4 @@
-import { BOARD_WIDTH, BOARD_HEIGHT, getGhostPosition } from '../../lib/tetrisEngine';
+import { BOARD_WIDTH, BOARD_HEIGHT, getGhostPosition } from '../../lib/tetrixEngine';
 
 export default function GameBoard({ board, currentPiece }) {
   // Build display board with current piece and ghost

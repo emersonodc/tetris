@@ -1,39 +1,39 @@
-import { LINES_PER_LEVEL } from '../../lib/tetrisEngine';
+import { LINES_PER_LEVEL } from '../../lib/tetrixEngine';
 
 export default function GameStats({ score, level, lines, compact = false, horizontal = false, className = '' }) {
   const progress = ((lines % LINES_PER_LEVEL) / LINES_PER_LEVEL) * 100;
   const compactHorizontal = compact && horizontal;
   const containerClass = horizontal
-    ? 'grid grid-cols-3 gap-1'
+    ? 'grid grid-cols-3 gap-2 sm:gap-2.5'
     : compact
       ? 'space-y-2'
       : 'space-y-4';
   const cardClass = compactHorizontal
-    ? 'bg-black/60 border border-cyan-500/20 rounded-md px-1 py-1.5 backdrop-blur-sm'
+    ? 'min-h-[4.5rem] rounded-md border border-cyan-500/20 bg-black/60 px-1.5 py-2 text-center backdrop-blur-sm flex flex-col items-center justify-center'
     : compact
-    ? 'bg-black/60 border border-cyan-500/20 rounded-lg p-2 backdrop-blur-sm'
-    : 'bg-black/60 border border-cyan-500/20 rounded-lg p-4 backdrop-blur-sm';
+    ? 'min-h-[5.4rem] rounded-lg border border-cyan-500/20 bg-black/60 p-2.5 text-center backdrop-blur-sm flex flex-col items-center justify-center'
+    : 'min-h-[7.4rem] rounded-lg border border-cyan-500/20 bg-black/60 p-4 text-center backdrop-blur-sm flex flex-col items-center justify-center';
   const labelClass = compactHorizontal
-    ? 'text-[8px] uppercase tracking-[0.08em] text-cyan-400/65 mb-0.5 font-light text-center'
+    ? 'mb-1 text-[9px] uppercase tracking-[0.06em] text-cyan-400/65 font-light text-center leading-none'
     : compact
-    ? 'text-[9px] uppercase tracking-[0.18em] text-cyan-400/70 mb-1 font-light'
-    : 'text-xs uppercase tracking-[0.3em] text-cyan-400/70 mb-1 font-light';
+    ? 'mb-1 text-[10px] uppercase tracking-[0.16em] text-cyan-400/70 font-light text-center'
+    : 'mb-1.5 text-xs uppercase tracking-[0.26em] text-cyan-400/70 font-light text-center';
   const valueClass = compactHorizontal
-    ? 'text-[11px] font-mono text-white tabular-nums text-center leading-none'
+    ? 'text-[1.5rem] sm:text-[1.75rem] font-mono text-white tabular-nums text-center leading-none'
     : compact
-    ? 'text-sm sm:text-base font-mono text-white tabular-nums'
-    : 'text-2xl font-mono text-white tabular-nums';
+    ? 'text-[1.5rem] sm:text-[1.7rem] font-mono text-white tabular-nums leading-none'
+    : 'text-[2.35rem] font-mono text-white tabular-nums leading-none';
   const levelValueClass = compactHorizontal
-    ? 'text-[13px] font-mono text-transparent bg-clip-text text-center leading-none'
+    ? 'text-[1.65rem] sm:text-[1.85rem] font-mono text-transparent bg-clip-text text-center leading-none'
     : compact
-    ? 'text-lg sm:text-xl font-mono text-transparent bg-clip-text'
-    : 'text-3xl font-mono text-transparent bg-clip-text';
+    ? 'text-[1.8rem] sm:text-[2rem] font-mono text-transparent bg-clip-text leading-none'
+    : 'text-[2.75rem] font-mono text-transparent bg-clip-text leading-none';
   const progressWrapperClass = compact
-    ? 'mt-1 h-0.5 bg-white/5 rounded-full overflow-hidden'
-    : 'mt-2 h-1 bg-white/5 rounded-full overflow-hidden';
+    ? 'mt-2 h-0.5 w-full bg-white/5 rounded-full overflow-hidden'
+    : 'mt-2.5 h-1 w-full bg-white/5 rounded-full overflow-hidden';
   const progressTextClass = compact
-    ? 'text-[8px] text-cyan-400/40 mt-1 font-mono'
-    : 'text-[10px] text-cyan-400/40 mt-1 font-mono';
+    ? 'mt-1 text-[8px] text-cyan-400/40 font-mono'
+    : 'mt-1.5 text-[10px] text-cyan-400/40 font-mono';
 
   return (
     <div className={`${containerClass} ${className}`.trim()}>

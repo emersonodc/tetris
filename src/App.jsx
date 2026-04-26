@@ -10,7 +10,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLaunchSplash from '@/components/AppLaunchSplash';
 import { initializeAdMob, showStartGameAd } from '@/lib/admob';
 // Add page imports here
-import Tetris from './pages/Tetris';
+import TetrixGame from './pages/Tetrix';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -82,7 +82,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      <Route path="/" element={<Tetris />} />
+      <Route path="/" element={<TetrixGame />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

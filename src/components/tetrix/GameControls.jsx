@@ -1,20 +1,32 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, RotateCw, ChevronsDown } from 'lucide-react';
 
 export default function GameControls({ onMove, onRotate, onDrop, onSoftDrop }) {
-  const repeatRef = useRef(null);
+  const repeatTimeoutRef = useRef(null);
+  const repeatIntervalRef = useRef(null);
+
+  const stopRepeat = () => {
+    if (repeatTimeoutRef.current !== null) {
+      clearTimeout(repeatTimeoutRef.current);
+      repeatTimeoutRef.current = null;
+    }
+
+    if (repeatIntervalRef.current !== null) {
+      clearInterval(repeatIntervalRef.current);
+      repeatIntervalRef.current = null;
+    }
+  };
 
   const startRepeat = (fn) => {
+    stopRepeat();
     fn();
-    repeatRef.current = setTimeout(() => {
-      repeatRef.current = setInterval(fn, 80);
+    repeatTimeoutRef.current = setTimeout(() => {
+      repeatTimeoutRef.current = null;
+      repeatIntervalRef.current = setInterval(fn, 80);
     }, 200);
   };
 
-  const stopRepeat = () => {
-    clearTimeout(repeatRef.current);
-    clearInterval(repeatRef.current);
-  };
+  useEffect(() => stopRepeat, []);
 
   const btnClass = "w-full aspect-square rounded-lg bg-black/60 border border-cyan-500/30 flex items-center justify-center active:bg-cyan-500/20 active:scale-95 transition-all select-none";
   const rotateClass = "w-full aspect-square rounded-lg bg-black/60 border border-fuchsia-500/30 flex items-center justify-center active:bg-fuchsia-500/20 active:scale-95 transition-all select-none";

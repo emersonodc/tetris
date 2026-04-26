@@ -12,10 +12,9 @@ export const TETROMINOES = {
 export const BOARD_WIDTH = 10;
 export const BOARD_HEIGHT = 20;
 
-export const LEVEL_SPEEDS = [
-  800, 720, 640, 560, 480, 400, 320, 240, 180, 140,
-  100, 80, 65, 50, 40, 30, 25, 20, 15, 10
-];
+export const BASE_DROP_INTERVAL_MS = 800;
+export const SPEED_INCREASE_PER_LEVEL = 0.05;
+export const MAX_SPEED_MULTIPLIER = 2;
 
 export const LINES_PER_LEVEL = 10;
 
@@ -108,6 +107,10 @@ export function getGhostPosition(board, piece) {
 }
 
 export function getSpeed(level) {
-  if (level >= LEVEL_SPEEDS.length) return LEVEL_SPEEDS[LEVEL_SPEEDS.length - 1];
-  return LEVEL_SPEEDS[level];
+  const speedMultiplier = Math.min(
+    1 + (level * SPEED_INCREASE_PER_LEVEL),
+    MAX_SPEED_MULTIPLIER
+  );
+
+  return Math.round(BASE_DROP_INTERVAL_MS / speedMultiplier);
 }

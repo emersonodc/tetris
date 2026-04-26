@@ -1,7 +1,10 @@
+import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
 
 export default function SplashScreen({ highScore, onStart, isStarting = false }) {
+  const showKeyboardHint = !Capacitor.isNativePlatform();
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black overflow-hidden"
@@ -67,11 +70,11 @@ export default function SplashScreen({ highScore, onStart, isStarting = false })
               filter: 'drop-shadow(0 0 20px rgba(0,255,255,0.5))',
             }}
           >
-            TETRIS
+            TETRIX
           </h1>
         </div>
         <p className="w-full text-center text-cyan-400/50 tracking-[0.5em] text-xs uppercase font-mono pl-[0.5em]">
-          Cyberpunk Edition
+          Neon Edition
         </p>
       </motion.div>
 
@@ -119,14 +122,16 @@ export default function SplashScreen({ highScore, onStart, isStarting = false })
       </motion.button>
 
       {/* Keyboard hint */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="mt-6 text-cyan-400/25 font-mono text-xs tracking-widest"
-      >
-        {isStarting ? 'aguarde um instante' : 'ou pressione ENTER'}
-      </motion.p>
+      {showKeyboardHint && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mt-6 text-cyan-400/25 font-mono text-xs tracking-widest"
+        >
+          {isStarting ? 'aguarde um instante' : 'ou pressione ENTER'}
+        </motion.p>
+      )}
     </motion.div>
   );
 }
