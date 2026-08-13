@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import AppLaunchSplash from '@/components/AppLaunchSplash';
 import { initializeAdMob, showStartGameAd } from '@/lib/admob';
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 // Add page imports here
 import TetrixGame from './pages/Tetrix';
 
@@ -62,6 +63,7 @@ const AppShell = () => {
     <Routes>
       <Route path="/" element={<TetrixGame />} />
       <Route path="*" element={<PageNotFound />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
     </Routes>
   );
 };
