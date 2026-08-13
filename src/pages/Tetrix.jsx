@@ -23,17 +23,18 @@ import {
 
 export default function TetrixGame() {
   const INTERSTITIAL_SCORE_STEP = 1000;
-  const boardWidthClass = "w-full max-w-[min(84vw,calc((100dvh-17rem-env(safe-area-inset-bottom))/2))] sm:max-w-[min(80vw,calc((100dvh-17.5rem-env(safe-area-inset-bottom))/2))] md:w-[300px] md:max-w-none";
+  const boardWidthClass = "w-full max-w-[min(86vw,calc((100dvh-17.25rem-env(safe-area-inset-bottom))/2))] sm:max-w-[min(80vw,calc((100dvh-18rem-env(safe-area-inset-bottom))/2))] md:w-[300px] md:max-w-none";
   const [board, setBoard] = useState(createEmptyBoard());
   const [currentPiece, setCurrentPiece] = useState(null);
   const [nextPiece, setNextPiece] = useState(null);
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(0);
   const [lines, setLines] = useState(0);
-  const [gameState, setGameState] = useState('idle'); // idle, playing, paused, transition, gameover
+  const [gameState, setGameState] = useState('idle'); // idle, playing, pausing, paused, transition, gameover
   const [pendingScoreInterstitial, setPendingScoreInterstitial] = useState(null);
   const [isRestartingFromGameOver, setIsRestartingFromGameOver] = useState(false);
-  const [isQuittingFromPause, setIsQuittingFromPause] = useState(false);
+  const [isShowingPauseAd, setIsShowingPauseAd] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
   const [highScore, setHighScore] = useState(() => {
     const saved = localStorage.getItem('tetrix_highscore');
     return saved ? parseInt(saved) : 0;
@@ -52,6 +53,25 @@ export default function TetrixGame() {
   levelRef.current = level;
   linesRef.current = lines;
   gameStateRef.current = gameState;
+
+  useEffect(() => {
+    const updateOrientation = () => {
+      setIsLandscape(window.matchMedia('(orientation: landscape)').matches);
+    };
+
+    updateOrientation();
+    window.addEventListener('resize', updateOrientation);
+    window.addEventListener('orientationchange', updateOrientation);
+
+    if (screen.orientation?.lock) {
+      screen.orientation.lock('portrait').catch(() => {});
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateOrientation);
+      window.removeEventListener('orientationchange', updateOrientation);
+    };
+  }, []);
 
   const clearGameLoop = useCallback(() => {
     if (gameLoopRef.current !== null) {
@@ -291,27 +311,44 @@ export default function TetrixGame() {
     }
   }, [isRestartingFromGameOver, startGame]);
 
-  const quitFromPause = useCallback(async () => {
-    if (isQuittingFromPause) return;
+  const quitFromPause = useCallback(() => {
+    setGameState('idle');
+  }, []);
 
-    if (Capacitor.getPlatform() !== 'android') {
-      setGameState('idle');
+  const togglePause = useCallback(async () => {
+    if (gameStateRef.current === 'paused') {
+      setGameState('playing');
       return;
     }
 
-    setIsQuittingFromPause(true);
+    if (gameStateRef.current !== 'playing' || isShowingPauseAd) return;
+
+    if (Capacitor.getPlatform() !== 'android') {
+      setGameState('paused');
+      return;
+    }
+
+    setGameState('pausing');
+
+    setIsShowingPauseAd(true);
 
     try {
-      console.log('[Tetrix] pauseQuit:start');
+      console.log('[Tetrix] pause:startAd');
       await showLevelInterstitialAd();
     } catch (error) {
-      console.error('[Tetrix] pauseQuit:error', error);
+      console.error('[Tetrix] pause:adError', error);
     } finally {
-      console.log('[Tetrix] pauseQuit:goIdle');
-      setGameState('idle');
-      setIsQuittingFromPause(false);
+      console.log('[Tetrix] pause:adDone');
+      setGameState('paused');
+      setIsShowingPauseAd(false);
     }
-  }, [isQuittingFromPause]);
+  }, [isShowingPauseAd]);
+
+  const pauseGame = useCallback(() => {
+    if (gameStateRef.current === 'playing') {
+      void togglePause();
+    }
+  }, [togglePause]);
 
   // Keyboard controls
   useEffect(() => {
@@ -329,26 +366,35 @@ export default function TetrixGame() {
         case 'ArrowDown':  e.preventDefault(); softDrop();          break;
         case 'ArrowUp':    e.preventDefault(); rotatePiece();       break;
         case ' ':          e.preventDefault(); hardDrop();          break;
-        case 'p': case 'P': setGameState('paused'); break;
+        case 'p': case 'P': e.preventDefault(); pauseGame(); break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [moveHorizontal, softDrop, rotatePiece, hardDrop, startGame]);
-
-  const togglePause = () => {
-    setGameState(prev => prev === 'playing' ? 'paused' : 'playing');
-  };
+  }, [moveHorizontal, softDrop, rotatePiece, hardDrop, startGame, pauseGame]);
 
   const goHome = useCallback(() => {
     clearGameLoop();
     setPendingScoreInterstitial(null);
     setIsRestartingFromGameOver(false);
+    setIsShowingPauseAd(false);
     setGameState('idle');
   }, [clearGameLoop]);
 
   return (
     <>
+    {isLandscape && (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black px-8 text-center">
+        <div>
+          <h2 className="text-2xl font-bold uppercase tracking-[0.28em] text-cyan-300">
+            Modo vertical
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-cyan-100/60">
+            Gire o dispositivo para continuar jogando.
+          </p>
+        </div>
+      </div>
+    )}
     <AnimatePresence>
       {gameState === 'idle' && (
         <SplashScreen highScore={highScore} onStart={startGame} />
@@ -375,8 +421,24 @@ export default function TetrixGame() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center min-h-dvh md:min-h-screen h-dvh md:h-auto overflow-hidden pt-2 md:pt-4 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] md:pb-4 px-3 md:px-4">
+        {['playing', 'pausing', 'paused', 'transition'].includes(gameState) && (
+          <button
+            type="button"
+            onClick={togglePause}
+            disabled={isShowingPauseAd}
+            aria-label={gameState === 'paused' ? 'Continuar' : 'Pausar'}
+            className="absolute right-3 top-[calc(env(safe-area-inset-top)+0.35rem)] z-30 flex h-11 w-11 items-center justify-center rounded-lg border border-cyan-500/30 bg-black/70 text-cyan-300 shadow-[0_0_18px_rgba(0,255,255,0.16)] active:scale-95 md:right-6 md:top-4"
+          >
+            {gameState === 'paused' ? (
+              <Play className="h-5 w-5" />
+            ) : (
+              <Pause className="h-5 w-5" />
+            )}
+          </button>
+        )}
+
         {/* Title */}
-        <h1 className="w-full shrink-0 text-center text-xl sm:text-2xl md:text-4xl font-bold tracking-[0.22em] sm:tracking-[0.28em] md:tracking-[0.4em] uppercase mb-1 md:mb-4 text-transparent bg-clip-text"
+        <h1 className="w-full shrink-0 px-14 text-center text-xl sm:text-2xl md:text-4xl font-bold tracking-[0.22em] sm:tracking-[0.28em] md:tracking-[0.4em] uppercase mb-1 md:mb-4 text-transparent bg-clip-text"
           style={{
             backgroundImage: 'linear-gradient(135deg, #0ff, #f0f, #0ff)',
             textShadow: '0 0 40px rgba(0,255,255,0.3)',
@@ -431,19 +493,7 @@ export default function TetrixGame() {
                 >
                   <RotateCcw className="w-4 h-4 mr-2" /> {isRestartingFromGameOver ? 'Carregando' : 'Reiniciar'}
                 </Button>
-              ) : (
-                <Button
-                  onClick={togglePause}
-                  className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30"
-                  variant="outline"
-                >
-                  {gameState === 'paused' ? (
-                    <><Play className="w-4 h-4 mr-2" /> Continuar</>
-                  ) : (
-                    <><Pause className="w-4 h-4 mr-2" /> Pausar</>
-                  )}
-                </Button>
-              )}
+              ) : null}
             </div>
 
             {/* Keyboard hints */}
@@ -458,7 +508,7 @@ export default function TetrixGame() {
         </div>
 
         {/* Mobile controls */}
-        <div className={`md:hidden shrink-0 mt-1 pb-[env(safe-area-inset-bottom)] ${boardWidthClass}`}>
+        <div className={`md:hidden shrink-0 -mt-1 pb-[env(safe-area-inset-bottom)] ${boardWidthClass}`}>
           {gameState === 'idle' ? (
             <Button onClick={startGame} className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 h-11 text-sm" variant="outline">
               <Play className="w-4 h-4 mr-2" /> Jogar
@@ -475,9 +525,6 @@ export default function TetrixGame() {
                 onDrop={hardDrop}
                 onSoftDrop={softDrop}
               />
-              <Button onClick={togglePause} className="w-full mt-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400/60 border border-cyan-500/20 h-8 text-xs" variant="outline">
-                {gameState === 'paused' ? 'Continuar' : 'Pausar'}
-              </Button>
             </>
           )}
         </div>
@@ -493,8 +540,8 @@ export default function TetrixGame() {
               <Button onClick={togglePause} className="w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30" variant="outline">
                 <Play className="w-4 h-4 mr-2" /> Continuar
               </Button>
-              <Button onClick={quitFromPause} disabled={isQuittingFromPause} className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30" variant="outline">
-                <RotateCcw className="w-4 h-4 mr-2" /> {isQuittingFromPause ? 'Carregando' : 'Desistir'}
+              <Button onClick={quitFromPause} className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30" variant="outline">
+                <RotateCcw className="w-4 h-4 mr-2" /> Desistir
               </Button>
             </div>
           </div>

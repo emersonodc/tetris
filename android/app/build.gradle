@@ -15,8 +15,8 @@ android {
         applicationId "com.emersonoliver.tetris"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10
-        versionName "1.0.9"
+        versionCode 12
+        versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -36,10 +36,6 @@ android {
     }
     buildTypes {
         debug {
-            applicationIdSuffix ".debug"
-            versionNameSuffix "-debug"
-            resValue "string", "app_name", "Tetrix Debug"
-            resValue "string", "title_activity_main", "Tetrix Debug"
         }
         release {
             minifyEnabled false
