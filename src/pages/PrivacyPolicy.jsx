@@ -8,13 +8,13 @@ export default function PrivacyPolicy() {
           to="/"
           className="mb-8 inline-block text-cyan-400 hover:text-cyan-300"
         >
-          ← Voltar para o Tretix Neon
+          ← Voltar para o Tetrix Neon
         </Link>
 
         <article className="space-y-8">
           <header>
             <h1 className="text-3xl font-bold text-cyan-400">
-              Política de Privacidade — Tretix Neon
+              Política de Privacidade — Tetrix Neon
             </h1>
 
             <p className="mt-3 text-sm text-slate-400">
@@ -25,22 +25,22 @@ export default function PrivacyPolicy() {
           <section>
             <p>
               Esta Política de Privacidade explica como o aplicativo
-              <strong> Tretix Neon</strong> ("aplicativo"), desenvolvido e
+              <strong> Tetrix Neon</strong> ("aplicativo"), desenvolvido e
               disponibilizado pela <strong>EOC Tech</strong> ("Desenvolvedor"),
               trata informações relacionadas aos usuários.
             </p>
 
             <p className="mt-4">
-              Ao utilizar o Tretix Neon, você declara estar ciente das práticas
+              Ao utilizar o Tetrix Neon, você declara estar ciente das práticas
               descritas nesta Política de Privacidade.
             </p>
           </section>
 
           <section>
-            <h2>1. Sobre o Tretix Neon</h2>
+            <h2>1. Sobre o Tetrix Neon</h2>
 
             <p>
-              O Tretix Neon é um jogo de quebra-cabeça inspirado no estilo
+              O Tetrix Neon é um jogo de quebra-cabeça inspirado no estilo
               clássico de jogos de blocos, desenvolvido pela EOC Tech e
               disponibilizado para dispositivos móveis.
             </p>
@@ -56,7 +56,7 @@ export default function PrivacyPolicy() {
             <h2>2. Informações armazenadas pelo aplicativo</h2>
 
             <p>
-              O Tretix Neon armazena localmente no dispositivo do usuário a
+              O Tetrix Neon armazena localmente no dispositivo do usuário a
               maior pontuação obtida no jogo.
             </p>
 
@@ -67,7 +67,7 @@ export default function PrivacyPolicy() {
 
             <p>
               O recorde é armazenado localmente no dispositivo por meio do
-              armazenamento local do aplicativo e não é enviado pelo Tretix
+              armazenamento local do aplicativo e não é enviado pelo Tetrix
               Neon para um servidor próprio.
             </p>
 
@@ -81,7 +81,7 @@ export default function PrivacyPolicy() {
             <h2>3. Publicidade e Google AdMob</h2>
 
             <p>
-              O Tretix Neon utiliza o serviço <strong>Google AdMob</strong>,
+              O Tetrix Neon utiliza o serviço <strong>Google AdMob</strong>,
               fornecido pela Google, para exibir anúncios dentro do aplicativo.
             </p>
 
@@ -177,7 +177,7 @@ export default function PrivacyPolicy() {
             <h2>5. Serviços de terceiros</h2>
 
             <p>
-              O Tretix Neon utiliza serviços de terceiros necessários para
+              O Tetrix Neon utiliza serviços de terceiros necessários para
               determinadas funcionalidades, principalmente o Google AdMob para
               publicidade.
             </p>
@@ -198,7 +198,7 @@ export default function PrivacyPolicy() {
             <h2>6. Informações que não solicitamos diretamente</h2>
 
             <p>
-              O Tretix Neon não solicita diretamente, para criação de conta ou
+              O Tetrix Neon não solicita diretamente, para criação de conta ou
               utilização normal do jogo:
             </p>
 
@@ -234,7 +234,7 @@ export default function PrivacyPolicy() {
             </p>
 
             <p>
-              O Tretix Neon não mantém um banco de dados próprio de informações
+              O Tetrix Neon não mantém um banco de dados próprio de informações
               pessoais dos jogadores.
             </p>
 
@@ -267,7 +267,7 @@ export default function PrivacyPolicy() {
 
             <p>
               Como a EOC Tech não mantém um banco de dados próprio com os
-              recordes, não há uma conta própria do Tretix Neon contendo esses
+              recordes, não há uma conta própria do Tetrix Neon contendo esses
               dados para exclusão.
             </p>
 
@@ -282,7 +282,7 @@ export default function PrivacyPolicy() {
             <h2>9. Crianças</h2>
 
             <p>
-              O Tretix Neon não é destinado especificamente a crianças menores
+              O Tetrix Neon não é destinado especificamente a crianças menores
               de 13 anos.
             </p>
 
@@ -336,7 +336,7 @@ export default function PrivacyPolicy() {
 
             <p>
               Para usuários no Brasil, o tratamento de dados pessoais
-              relacionado ao Tretix Neon observará, quando aplicável, a
+              relacionado ao Tetrix Neon observará, quando aplicável, a
               <strong>
                 {" "}
                 Lei nº 13.709/2018 — Lei Geral de Proteção de Dados Pessoais
@@ -376,7 +376,7 @@ export default function PrivacyPolicy() {
 
             <p>
               Para dúvidas, solicitações ou questões relacionadas à privacidade
-              e proteção de dados no Tretix Neon, entre em contato:
+              e proteção de dados no Tetrix Neon, entre em contato:
             </p>
 
             <p>
@@ -394,7 +394,7 @@ export default function PrivacyPolicy() {
 
           <footer className="border-t border-slate-800 pt-6 text-sm text-slate-500">
             <p>Desenvolvido por EOC Tech</p>
-            <p>Aplicativo: Tretix Neon</p>
+            <p>Aplicativo: Tetrix Neon</p>
             <p>Última atualização: 13 de agosto de 2026</p>
           </footer>
         </article>

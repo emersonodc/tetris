@@ -258,7 +258,12 @@ export default function TetrixGame() {
       if (e.touches.length > 1) e.preventDefault();
     };
     const preventPull = (e) => {
-      if (e.target.closest('.game-area') && !e.target.closest('button')) e.preventDefault();
+      if (
+        e.target.closest('.game-area') &&
+        !e.target.closest('button, a, [role="button"], [role="link"]')
+      ) {
+        e.preventDefault();
+      }
     };
     document.addEventListener('touchmove', preventTouch, { passive: false });
     document.addEventListener('touchstart', preventPull, { passive: false });

@@ -1,9 +1,17 @@
 import { Capacitor } from '@capacitor/core';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function SplashScreen({ highScore, onStart, isStarting = false }) {
   const showKeyboardHint = !Capacitor.isNativePlatform();
+  const navigate = useNavigate();
+
+  const openPrivacyPolicy = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    navigate('/privacy');
+  };
 
   return (
     <motion.div
@@ -13,21 +21,27 @@ export default function SplashScreen({ highScore, onStart, isStarting = false })
       transition={{ duration: 0.4 }}
     >
       {/* Background grid */}
-      <div className="absolute inset-0 opacity-[0.04]" style={{
-        backgroundImage: `
-          linear-gradient(rgba(0,255,255,1) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,255,255,1) 1px, transparent 1px)
-        `,
-        backgroundSize: '40px 40px',
-      }} />
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(0,255,255,1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,255,255,1) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
+        }}
+      />
 
       {/* Glows */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: `
-          radial-gradient(ellipse at 50% 40%, rgba(0,255,255,0.12) 0%, transparent 60%),
-          radial-gradient(ellipse at 20% 80%, rgba(255,0,255,0.08) 0%, transparent 50%)
-        `,
-      }} />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse at 50% 40%, rgba(0,255,255,0.12) 0%, transparent 60%),
+            radial-gradient(ellipse at 20% 80%, rgba(255,0,255,0.08) 0%, transparent 50%)
+          `,
+        }}
+      />
 
       {/* Falling blocks animation */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -37,8 +51,28 @@ export default function SplashScreen({ highScore, onStart, isStarting = false })
             className="absolute w-6 h-6 rounded-sm opacity-20"
             style={{
               left: `${10 + i * 12}%`,
-              backgroundColor: ['#00f0f0','#f0f000','#a000f0','#00f000','#f00000','#0000f0','#f0a000','#00f0f0'][i],
-              boxShadow: `0 0 10px ${['#00f0f0','#f0f000','#a000f0','#00f000','#f00000','#0000f0','#f0a000','#00f0f0'][i]}`,
+              backgroundColor: [
+                '#00f0f0',
+                '#f0f000',
+                '#a000f0',
+                '#00f000',
+                '#f00000',
+                '#0000f0',
+                '#f0a000',
+                '#00f0f0',
+              ][i],
+              boxShadow: `0 0 10px ${
+                [
+                  '#00f0f0',
+                  '#f0f000',
+                  '#a000f0',
+                  '#00f000',
+                  '#f00000',
+                  '#0000f0',
+                  '#f0a000',
+                  '#00f0f0',
+                ][i]
+              }`,
             }}
             initial={{ y: -40 }}
             animate={{ y: '110vh' }}
@@ -73,6 +107,7 @@ export default function SplashScreen({ highScore, onStart, isStarting = false })
             TETRIX
           </h1>
         </div>
+
         <p className="w-full text-center text-cyan-400/50 tracking-[0.5em] text-xs uppercase font-mono pl-[0.5em]">
           Neon Edition
         </p>
@@ -101,17 +136,20 @@ export default function SplashScreen({ highScore, onStart, isStarting = false })
         className="relative group px-12 py-4 rounded-lg font-bold tracking-[0.3em] uppercase text-lg cursor-pointer disabled:opacity-70 disabled:cursor-wait"
         style={{
           fontFamily: 'var(--font-orbitron)',
-          background: 'linear-gradient(135deg, rgba(0,255,255,0.15), rgba(255,0,255,0.15))',
+          background:
+            'linear-gradient(135deg, rgba(0,255,255,0.15), rgba(255,0,255,0.15))',
           border: '1px solid rgba(0,255,255,0.4)',
           color: '#0ff',
           textShadow: '0 0 10px rgba(0,255,255,0.7)',
-          boxShadow: '0 0 20px rgba(0,255,255,0.2), inset 0 0 20px rgba(0,255,255,0.05)',
+          boxShadow:
+            '0 0 20px rgba(0,255,255,0.2), inset 0 0 20px rgba(0,255,255,0.05)',
         }}
       >
         <span className="flex items-center gap-3">
           <Play className="w-5 h-5" />
           {isStarting ? 'CARREGANDO' : 'JOGAR'}
         </span>
+
         {/* Animated border */}
         <motion.div
           className="absolute inset-0 rounded-lg pointer-events-none"
@@ -132,6 +170,19 @@ export default function SplashScreen({ highScore, onStart, isStarting = false })
           {isStarting ? 'aguarde um instante' : 'ou pressione ENTER'}
         </motion.p>
       )}
+
+      {/* Privacy Policy */}
+      <motion.a
+        href="/privacy"
+        onClick={openPrivacyPolicy}
+        onTouchEnd={openPrivacyPolicy}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="relative z-[60] mt-4 inline-flex min-h-11 items-center justify-center px-4 text-center font-mono text-[11px] uppercase tracking-widest text-cyan-400/50 transition-colors hover:text-cyan-400/80 active:text-cyan-300"
+      >
+        Política de Privacidade
+      </motion.a>
     </motion.div>
   );
 }

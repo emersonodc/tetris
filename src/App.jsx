@@ -62,8 +62,8 @@ const AppShell = () => {
   return (
     <Routes>
       <Route path="/" element={<TetrixGame />} />
-      <Route path="*" element={<PageNotFound />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
